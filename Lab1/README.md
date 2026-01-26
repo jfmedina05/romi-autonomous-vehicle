@@ -58,6 +58,7 @@ The system operated using **open-loop control**, meaning no sensors were used fo
 | 2    | TBD                  | TBD               | TBD                | TBD             |
 | 3    | TBD                  | TBD               | TBD                | TBD             |
 | 4    | TBD                  | TBD               | TBD                | TBD             |
+| Average    | TBD                  | TBD               | TBD                | TBD             |                 
 
 ---
 
