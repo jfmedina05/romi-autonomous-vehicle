@@ -1,4 +1,4 @@
-# Lab 1 — Square Driver Program
+# Lab 1 - Square Driver Program
 
 **Team Members:**  
 - Jaiden Medina  
