@@ -17,4 +17,4 @@
 - [ ] Updated `README.md` file in lab 1 directory with discussion of square driver program
 
 --- 
-### Lab 2
+## Lab 2
