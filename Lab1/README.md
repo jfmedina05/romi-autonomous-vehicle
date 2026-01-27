@@ -77,4 +77,4 @@ The system operated using **open-loop control**, meaning no sensors were used fo
 ## Demonstration Video
 
 Narrated robot run:  
-**[Insert video link here]**
+https://indiana-my.sharepoint.com/:v:/g/personal/jfmedina_iu_edu/IQCSrCiIvbFaR5d1uiKApnvGAb32OO2-aUZLlZwCNb3rCVk
