@@ -54,11 +54,10 @@ The system operated using **open-loop control**, meaning no sensors were used fo
 
 | Side | Measured Length (cm) | Length Error (cm) | Measured Angle (°) | Angle Error (°) |
 |------|----------------------|-------------------|--------------------|-----------------|
-| 1    | TBD                  | TBD               | TBD                | TBD             |
-| 2    | TBD                  | TBD               | TBD                | TBD             |
-| 3    | TBD                  | TBD               | TBD                | TBD             |
-| 4    | TBD                  | TBD               | TBD                | TBD             |
-| Average    | TBD                  | TBD               | TBD                | TBD             |                 
+| 1    | 23                  | 1               | ~80                | ~10             |
+| 2    | 23                  | 1               | ~80                | ~10             |
+| 3    | 23                  | 1               | ~80                | ~10             |
+| 4    | 23                  | 1               | ~80                | ~10             |               
 
 ---
 
