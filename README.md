@@ -13,8 +13,8 @@
 ### Completed Tasks
 - [x] Created private IU Github repository: **E321-S26**
 - [x] Added required collaborators
-- [ ] Created `Lab 1` directory & committed Arduino program
-- [ ] Updated `README.md` file in lab 1 directory with discussion of square driver program
+- [x] Created `Lab 1` directory & committed Arduino program
+- [x] Updated `README.md` file in lab 1 directory with discussion of square driver program
 
 --- 
 ## Lab 2
