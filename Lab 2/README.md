@@ -1,43 +1,66 @@
-# Lab 2 – Square Driver with Wheel Speed Control
+# Lab 2 – Closed-Loop Square Driver with Wheel Speed Control
 
 ## Discussion of Square Driver Program
 
-Our square driver program controls the Romi robot to drive four equal sides and perform an in-place turn between each side. Motion is divided into three phases per side:
+This program drives the Romi robot in a **square path** using **closed-loop wheel speed control** and encoder feedback. Each side of the square is targeted to be **2 ft (609.6 mm)** long.
 
-1. **Acceleration** – Motor speed increases gradually to reduce jerk.  
-2. **Constant motion / deceleration** – Speed decreases smoothly before stopping.  
-3. **Turn phase** – Left motor drives forward while right motor reverses to rotate the robot in place.  
+The control system operates as a **state machine**:
 
-To keep the robot moving straight, we applied a **motor scaling correction**:
+- **WAIT_START** – Waits for Button A press  
+- **DRIVE_SIDE** – Drives forward one side of the square  
+- **TURN_90** – Performs an in-place 90° turn  
+- **DONE** – Stops after completing all four sides  
+
+### Motion Control Strategy
+
+Motion uses a **PID-based wheel speed controller** combined with:
+
+- **Feedforward motor command** (`BASE_FEEDFORWARD`)  
+- **PID speed correction** (`pidDelta()`)  
+- **Slew rate limiting** to smooth command changes  
+- **Straightness correction** using encoder differences  
+
+Motor imbalance was compensated using:
 
 ```cpp
 const float LEFT_MOTOR_SCALE  = 1.00;
 const float RIGHT_MOTOR_SCALE = 1.12;
 ```
 
-This compensates for the right motor being slightly weaker than the left.
+Distance traveled is calculated from encoder counts using:
+
+```cpp
+float MM_PER_COUNT = 0.15625f;
+```
+
+Turns are controlled by counting encoder ticks:
+
+```cpp
+int TURN_90_COUNTS = 760;
+```
 
 ---
 
 ## Approach to Tuning the Wheel Speed Controllers
 
-Tuning focused on achieving smooth and repeatable motion:
+Tuning followed an iterative experimental process:
 
-- Gradual speed ramping was used instead of sudden commands.  
-- The right motor scale factor was increased incrementally until straight motion was observed.  
-- Multiple square runs were performed, and side lengths were measured after each adjustment.  
-- Small adjustments to the turn speed were made until consistent 90° turns were achieved.  
-
-Tuning was empirical: **adjust → run → measure → refine**.
+1. **Feedforward first** – Set a baseline motor command so wheels move smoothly.  
+2. **PID gains next** – Adjusted \(K_p\) and \(K_i\) until speed tracking was stable without oscillation.  
+3. **Slew rate limit** – Prevented jerky acceleration.  
+4. **Straightness correction (STRAIGHT_K)** – Adjusted until the robot drove straight.  
+5. **Distance calibration** – Adjusted `MM_PER_COUNT` using measured travel distance.  
+6. **Turn calibration** – Adjusted `TURN_90_COUNTS` until turns were near 90°.
 
 ---
 
 ## Challenges in Tuning the Wheel Speed Controllers
 
-- The robot initially drifted due to motor imbalance.  
-- Turning accuracy varied due to wheel slip during in-place rotation.  
-- Battery voltage changes affected speed consistency.  
-- Floor surface friction differences caused variation in side length.  
+- Motor torque imbalance caused drifting.
+- Encoder noise made derivative control unstable, so \(K_d = 0\).
+- Wheel slip during turns affected angle accuracy.
+- Small battery voltage changes altered motor speed.
+- Finding the correct `MM_PER_COUNT` required multiple test runs.
 
 ---
 
@@ -52,9 +75,9 @@ Tuning was empirical: **adjust → run → measure → refine**.
 | 3    | 24.5 in |
 | 4    | 24.5 in |
 
-### Length Error (per side)
+### Length Error
 
-Target side = **24 in**
+Target = **24 in**
 
 | Side | Error (in) | % Error |
 |------|------------|---------|
@@ -79,13 +102,13 @@ Target side = **24 in**
 
 ### Track Angle Error
 
-Visual inspection showed the robot returning close to its starting orientation after completing the square. Minor angular deviation was observed, estimated to be less than **5° total accumulated error** across all four turns.
+The robot returned close to its starting orientation after completing the square. Visual estimation indicated a small cumulative angular error (<5° total), likely from minor slip during turns.
 
 ---
 
 ## How Close to the Ideal Distance
 
-The final average distance was **24.5 in**, which is **0.5 in above the ideal 24 in**, representing a **2.1% error**, which is within acceptable tolerance for open-loop motor control.
+The robot achieved an average side length of **24.5 in**, which is **0.5 in above the ideal 24 in**, representing a **2.1% error** — very good for a small mobile robot operating on a flat surface.
 
 ---
 
@@ -95,7 +118,8 @@ The final average distance was **24.5 in**, which is **0.5 in above the ideal 24
 - Uneven floor friction  
 - Motor torque imbalance  
 - Battery voltage variation  
-- Lack of encoder-based closed-loop distance stopping  
+- Encoder quantization  
+- Approximate `MM_PER_COUNT` calibration  
 
 ---
 
