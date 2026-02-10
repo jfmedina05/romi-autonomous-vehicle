@@ -88,15 +88,13 @@ Target = **24 in**
 
 **Average side length**
 
-\[
-\frac{24 + 25 + 24.5 + 24.5}{4} = 24.5 \text{ in}
-\]
+24.5
 
 **Average percent error**
 
-\[
-\frac{24.5 - 24}{24} \times 100 = 2.1\%
-\]
+
+2.1\%
+
 
 ---
 
