@@ -123,6 +123,5 @@ The robot achieved an average side length of **24.5 in**, which is **0.5 in abov
 
 ## Demonstration Video
 
-*(Insert link to narrated video or TA demonstration here)*
-
+https://indiana-my.sharepoint.com/:v:/g/personal/jfmedina_iu_edu/IQDaAcXq-6zMTbLDtQx9KY89AS88-Z-BiEQzFpZRx7JBHYE
 ---
