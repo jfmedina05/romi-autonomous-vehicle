@@ -1,130 +1,68 @@
-# Lab 2 – Closed-Loop Square Driver with Wheel Speed Control
-
-## Discussion of Square Driver Program
-
-This program drives the Romi robot in a **square path** using **closed-loop wheel speed control** and encoder feedback. Each side of the square is targeted to be **2 ft (609.6 mm)** long.
-
-The control system operates as a **state machine**:
-
-- **WAIT_START** – Waits for Button A press  
-- **DRIVE_SIDE** – Drives forward one side of the square  
-- **TURN_90** – Performs an in-place 90° turn  
-- **DONE** – Stops after completing all four sides  
-
-### Motion Control Strategy
-
-Motion uses a **PID-based wheel speed controller** combined with:
-
-- **Feedforward motor command** (`BASE_FEEDFORWARD`)  
-- **PID speed correction** (`pidDelta()`)  
-- **Slew rate limiting** to smooth command changes  
-- **Straightness correction** using encoder differences  
-
-Motor imbalance was compensated using:
-
-```cpp
-const float LEFT_MOTOR_SCALE  = 1.00;
-const float RIGHT_MOTOR_SCALE = 1.12;
-```
-
-Distance traveled is calculated from encoder counts using:
-
-```cpp
-float MM_PER_COUNT = 0.15625f;
-```
-
-Turns are controlled by counting encoder ticks:
-
-```cpp
-int TURN_90_COUNTS = 760;
-```
+# Lab 3 – Line Sensor Characterization and Accuracy Analysis
 
 ---
 
-## Approach to Tuning the Wheel Speed Controllers
+## Discussion of Line Sensor Installation and Software
 
-Tuning followed an iterative experimental process:
+This program utilizes the Romi reflectance sensor array to detect and estimate the lateral position of a track line relative to the robot’s centerline. The array consists of six infrared (IR) emitter–detector pairs mounted beneath the front of the Romi chassis.
 
-1. **Feedforward first** – Set a baseline motor command so wheels move smoothly.  
-2. **PID gains next** – Adjusted \(K_p\) and \(K_i\) until speed tracking was stable without oscillation.  
-3. **Slew rate limit** – Prevented jerky acceleration.  
-4. **Straightness correction (STRAIGHT_K)** – Adjusted until the robot drove straight.  
-5. **Distance calibration** – Adjusted `MM_PER_COUNT` using measured travel distance.  
-6. **Turn calibration** – Adjusted `TURN_90_COUNTS` until turns were near 90°.
+Each sensor emits IR light toward the surface and measures the intensity of reflected radiation. Light-colored surfaces such as the white background reflect a greater amount of IR radiation, while darker surfaces such as the black track line reflect significantly less. This contrast in reflectance allows the robot to distinguish between the line and the surrounding surface.
 
----
+Sensor readings are processed using the **QTRSensors** library. During initialization, the sensors are calibrated by sweeping the array across both black and white surfaces to determine minimum and maximum reflectance values for each sensor. Subsequent readings are normalized based on these calibration values.
 
-## Challenges in Tuning the Wheel Speed Controllers
+The function `readLineBlack()` is used to estimate the position of the detected line relative to the center of the sensor array using a weighted centroid calculation. The reported line position is centered by subtracting the midpoint value, producing a signed error where:
 
-- Motor torque imbalance caused drifting.
-- Encoder noise made derivative control unstable, so \(K_d = 0\).
-- Wheel slip during turns affected angle accuracy.
-- Small battery voltage changes altered motor speed.
-- Finding the correct `MM_PER_COUNT` required multiple test runs.
+- **0** indicates the line is directly beneath the center of the robot  
+- **Positive values** indicate the line is to the right of center  
+- **Negative values** indicate the line is to the left of center  
+
+This signed error value was recorded and used to evaluate sensor accuracy.
 
 ---
 
-## Accuracy of Final Solution
+## Line Sensor Accuracy Measurements
 
-### Measured Side Lengths
+Sensor accuracy was evaluated by positioning the robot over track lines of varying widths and translating the robot laterally in increments of **0.25 inches** relative to the line center.
 
-| Side | Measured Length |
-|------|-----------------|
-| 1    | 24 in |
-| 2    | 25 in |
-| 3    | 24.5 in |
-| 4    | 24.5 in |
+The following line widths were tested:
 
-### Length Error
+- **0.125 in**
+- **0.5 in**
+- **0.75 in**
+- **1.0 in**
 
-Target = **24 in**
+At each displacement position, the robot was held stationary for approximately five seconds while the reported line position was recorded through the onboard microcontroller. Multiple readings were collected and averaged in order to reduce measurement noise.
 
-| Side | Error (in) | % Error |
-|------|------------|---------|
-| 1 | 0.0 | 0% |
-| 2 | +1.0 | 4.2% |
-| 3 | +0.5 | 2.1% |
-| 4 | +0.5 | 2.1% |
+The reported displacement was computed from the centered line position estimate and converted into physical units based on the known spacing between adjacent sensors. Measurement error at each position was calculated as:
 
-**Average side length**
+Error = Reported Displacement − Actual Displacement
 
-\[
-\frac{24 + 25 + 24.5 + 24.5}{4} = 24.5 \text{ in}
-\]
-
-**Average percent error**
-
-\[
-\frac{24.5 - 24}{24} \times 100 = 2.1\%
-\]
+The resulting error values for each tested line width were plotted as a function of actual line displacement.
 
 ---
 
-### Track Angle Error
+## Accuracy Results
 
-The robot returned close to its starting orientation after completing the square. Visual estimation indicated a small cumulative angular error (<5° total), likely from minor slip during turns.
+The combined error plot compares the sensor-reported position error for each line width across the full displacement range. Ideally, the sensor-reported position would match the measured displacement, resulting in an error of zero.
+
+Results indicate that the narrowest line width (**0.125 in**) produced the largest deviation from the expected response, particularly at larger displacements from the sensor array center. This behavior is likely due to insufficient sensor coverage of the narrow line.
+
+The widest tested line (**1.0 in**) exhibited smoother sensor transitions but introduced systematic bias at larger lateral offsets, likely due to multiple sensors simultaneously detecting the line.
+
+The **0.5 in** and **0.75 in** line widths produced comparatively smaller deviations across the displacement range, indicating improved agreement between reported and actual line positions.
 
 ---
 
-## How Close to the Ideal Distance
+## Recommended Track Line Width
 
-The robot achieved an average side length of **24.5 in**, which is **0.5 in above the ideal 24 in**, representing a **2.1% error** — very good for a small mobile robot operating on a flat surface.
+Based on the observed measurement errors, a track line width of approximately **0.5 inches** produced the most accurate and consistent position estimates from the sensor array.
 
----
+Narrower lines resulted in increased variability due to incomplete sensor detection of the line surface, while wider lines introduced systematic bias in the reported position due to simultaneous detection by multiple sensors.
 
-## Sources of Distance Error
-
-- Wheel slip during turns  
-- Uneven floor friction  
-- Motor torque imbalance  
-- Battery voltage variation  
-- Encoder quantization  
-- Approximate `MM_PER_COUNT` calibration  
+Therefore, a track line width of approximately **0.5 inches** is recommended for optimal performance of the Romi reflectance sensor array in line-following applications.
 
 ---
 
 ## Demonstration Video
 
-(https://indiana-my.sharepoint.com/:v:/g/personal/jfmedina_iu_edu/IQDYtCynyKqITYx1japxoAE6AXEUUOIj5QQJ8RlnAIRb8-E?e=kDgAjy&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D)*
-
----
+[Lab 3 Demonstration Video](https://indiana-my.sharepoint.com/:v:/g/personal/jfmedina_iu_edu/IQDYtCynyKqITYx1japxoAE6AXEUUOIj5QQJ8RlnAIRb8-E?e=kDgAjy&nav=eyJyZWZlcnJhbEluZm8iOnsicmVmZXJyYWxBcHAiOiJTdHJlYW1XZWJBcHAiLCJyZWZlcnJhbFZpZXciOiJTaGFyZURpYWxvZy1MaW5rIiwicmVmZXJyYWxBcHBQbGF0Zm9ybSI6IldlYiIsInJlZmVycmFsTW9kZSI6InZpZXcifX0%3D)
