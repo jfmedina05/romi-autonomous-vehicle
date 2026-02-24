@@ -88,15 +88,13 @@ Target = **24 in**
 
 **Average side length**
 
-\[
-\frac{24 + 25 + 24.5 + 24.5}{4} = 24.5 \text{ in}
-\]
+24.5
 
 **Average percent error**
 
-\[
-\frac{24.5 - 24}{24} \times 100 = 2.1\%
-\]
+
+2.1\%
+
 
 ---
 
@@ -125,6 +123,5 @@ The robot achieved an average side length of **24.5 in**, which is **0.5 in abov
 
 ## Demonstration Video
 
-*(Insert link to narrated video or TA demonstration here)*
-
+https://indiana-my.sharepoint.com/:v:/g/personal/jfmedina_iu_edu/IQDaAcXq-6zMTbLDtQx9KY89AS88-Z-BiEQzFpZRx7JBHYE
 ---
