@@ -8,7 +8,7 @@
 
 ---
 
-## Lab 1 - Github + Romi robot Setup & Square Driver Program
+## Lab 1 - Github + Romi Robot Setup & Square Driver Program
 
 ### Completed Tasks
 - [x] Created private IU Github repository: **E321-S26**
@@ -16,5 +16,127 @@
 - [x] Created `Lab 1` directory & committed Arduino program
 - [x] Updated `README.md` file in lab 1 directory with discussion of square driver program
 
---- 
-## Lab 2
+---
+
+## Lab 2 - Closed-Loop Square Driver with Wheel Speed Control
+
+### Completed Tasks
+- [x] Implemented closed-loop wheel speed control using encoder feedback
+- [x] Developed square-driving state machine
+- [x] Implemented PID-based wheel speed controller
+- [x] Calibrated encoder distance conversion (`MM_PER_COUNT`)
+- [x] Tuned motor scaling factors
+- [x] Calibrated 90° turning using encoder tick counts
+- [x] Evaluated distance and angular accuracy
+
+### Summary
+
+The Romi robot drives in a **2 ft square path** using a closed-loop wheel speed controller and encoder feedback.
+
+The motion controller operates as a **state machine**:
+
+- **WAIT_START** – Waits for Button A press  
+- **DRIVE_SIDE** – Drives forward one side of the square  
+- **TURN_90** – Performs an in-place 90° turn  
+- **DONE** – Stops after completing all four sides  
+
+Wheel speed control combines:
+
+- Feedforward motor command  
+- PID speed correction  
+- Slew rate limiting  
+- Straightness correction using encoder differences  
+
+Motor imbalance was compensated using:
+
+```cpp
+const float LEFT_MOTOR_SCALE  = 1.00;
+const float RIGHT_MOTOR_SCALE = 1.12;
+```
+
+Distance traveled is calculated from encoder counts using:
+
+```cpp
+float MM_PER_COUNT = 0.15625f;
+```
+
+Turns are controlled by counting encoder ticks:
+
+```cpp
+int TURN_90_COUNTS = 760;
+```
+
+### Accuracy Results
+
+Target Side Length = **24 in**
+
+| Side | Measured Length | Error (in) | % Error |
+|------|-----------------|------------|---------|
+| 1    | 24.0            | 0.0        | 0%      |
+| 2    | 25.0            | +1.0       | 4.2%    |
+| 3    | 24.5            | +0.5       | 2.1%    |
+| 4    | 24.5            | +0.5       | 2.1%    |
+
+Average Side Length = **24.5 in**  
+Average Percent Error = **2.1%**
+
+The robot returned close to its starting orientation after completing the square, indicating minimal cumulative angular drift (<5°).
+
+### Demonstration Video
+
+[Lab 2 Demonstration Video](https://indiana-my.sharepoint.com/:v:/g/personal/jfmedina_iu_edu/IQDaAcXq-6zMTbLDtQx9KY89AS88-Z-BiEQzFpZRx7JBHYE)
+
+---
+
+## Lab 3 - Line Sensor Characterization and Accuracy Analysis
+
+### Completed Tasks
+- [x] Installed Romi reflectance sensor array
+- [x] Implemented calibration using QTRSensors library
+- [x] Estimated lateral track line position
+- [x] Converted sensor output to displacement measurements
+- [x] Evaluated measurement accuracy across multiple line widths
+- [x] Determined optimal track width for line-following
+
+### Summary
+
+This lab utilized the Romi reflectance sensor array to estimate the lateral position of a track line relative to the robot’s centerline using six infrared emitter–detector pairs.
+
+Sensor readings were calibrated using the **QTRSensors** library to determine minimum and maximum reflectance values. The function:
+
+```cpp
+readLineBlack()
+```
+
+was used to compute the position of the detected line via a weighted centroid calculation. The reported value was centered to produce a signed error where:
+
+- **0** → line centered under robot  
+- **Positive** → line right of center  
+- **Negative** → line left of center  
+
+Sensor accuracy was evaluated by laterally translating the robot in **0.25 in increments** across track lines of varying widths:
+
+- 0.125 in  
+- 0.5 in  
+- 0.75 in  
+- 1.0 in  
+
+Error was calculated as:
+
+```text
+Error = Reported Displacement − Actual Displacement
+```
+
+### Results
+
+- **0.125 in line:** Largest deviation due to insufficient sensor coverage  
+- **1.0 in line:** Systematic bias from simultaneous multi-sensor detection  
+- **0.5 in / 0.75 in lines:** Smallest deviation across displacement range  
+
+### Recommended Track Line Width
+
+A track width of approximately **0.5 inches** produced the most accurate and consistent lateral position estimates for line-following applications.
+
+### Demonstration Video
+
+[Lab 3 Demonstration Video](https://indiana-my.sharepoint.com/:v:/g/personal/jfmedina_iu_edu/IQDYtCynyKqITYx1japxoAE6AXEUUOIj5QQJ8RlnAIRb8-E)
