@@ -140,3 +140,92 @@ A track width of approximately **0.5 inches** produced the most accurate and con
 ### Demonstration Video
 
 [Lab 3 Demonstration Video](https://indiana-my.sharepoint.com/:v:/g/personal/jfmedina_iu_edu/IQDYtCynyKqITYx1japxoAE6AXEUUOIj5QQJ8RlnAIRb8-E)
+
+---
+
+## Lab 4 - PID Line Following Controller
+
+### Completed Tasks
+- [x] Implemented PID-based line-following controller
+- [x] Integrated QTR line sensor system from Lab 3
+- [x] Logged controller error and wheel speeds
+- [x] Tuned **P**, **PD**, and **PID** control strategies
+- [x] Analyzed controller performance using error vs time graphs
+- [x] Determined fastest reliable line-following configuration
+
+### Summary
+
+This lab implemented a **PID-based line-following controller** on the Romi robot. The robot uses the reflectance sensor array from Lab 3 to measure the position of a black line relative to the center of the robot.
+
+The line sensor returns a value between **0 and 5000** corresponding to the position of the detected line across the sensor array. This value is converted into a signed tracking error:
+
+```cpp
+error = CENTER - position;
+```
+
+where:
+
+- **error = 0** → line centered under robot  
+- **positive error** → line to the left  
+- **negative error** → line to the right  
+
+The controller calculates a steering correction using:
+
+```cpp
+correction = P + I + D
+```
+
+Motor commands are generated using differential drive:
+
+```cpp
+leftSpeed  = baseSpeed - correction;
+rightSpeed = baseSpeed + correction;
+```
+
+This allows the robot to continuously adjust its heading and remain centered on the line.
+
+### Controller Comparison
+
+Three controller configurations were tested:
+
+**P Controller**
+- Fast response
+- Large oscillations
+- Overshoot during turns
+
+**PD Controller**
+- Reduced oscillation
+- Faster stabilization
+- Best performance for high-speed tracking
+
+**PID Controller**
+- Improved steady-state accuracy
+- Slightly slower response during sharp disturbances
+
+### Results
+
+Error vs time plots were generated from logged data to evaluate how quickly the robot returned to the line after encountering disturbances such as turns in the track.
+
+The results showed that:
+
+- **P control** produced fast response but unstable tracking
+- **PID control** improved accuracy but slowed recovery slightly
+- **PD control** provided the best balance between stability and responsiveness
+
+### Optimal Control Strategy
+
+The **PD controller produced the fastest reliable line-following performance** while maintaining stable tracking of the line.
+
+### Demonstration Videos
+
+**P Controller**
+
+[Lab 4 P-Controller Demonstration](https://indiana-my.sharepoint.com/personal/jfmedina_iu_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fjfmedina%5Fiu%5Fedu%2FDocuments%2FAttachments%2Fp%5Fcontroller%5Fdemo%2Emp4)
+
+**PD Controller**
+
+[Lab 4 PD-Controller Demonstration](https://indiana-my.sharepoint.com/personal/jfmedina_iu_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fjfmedina%5Fiu%5Fedu%2FDocuments%2FAttachments%2Fpd%5Fcontroller%5Fdemo%2Emp4)
+
+**PID Controller**
+
+[Lab 4 PID-Controller Demonstration](https://indiana-my.sharepoint.com/personal/jfmedina_iu_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fjfmedina%5Fiu%5Fedu%2FDocuments%2FAttachments%2Fpid%5Fcontroller%5Fdemo%2Emp4)
