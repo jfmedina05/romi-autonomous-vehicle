@@ -223,19 +223,19 @@ The **PD controller produced the fastest reliable line-following performance**.
 
 ## P Controller Demonstration
 
-https://indiana-my.sharepoint.com/personal/jfmedina_iu_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fjfmedina%5Fiu%5Fedu%2FDocuments%2FAttachments%2Fp%5Fcontroller%5Fdemo%2Emp4&ct=1773036377745&or=OWA%2DNT%2DMail&cid=5875fa3f%2D983b%2D85f8%2D662b%2D8e0a4ec53526&ga=1&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E5d1c01ca%2De622%2D4096%2Db8b4%2D9269e2846872
+[Lab 4 P-Controller Demonstration Video](https://indiana-my.sharepoint.com/personal/jfmedina_iu_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fjfmedina%5Fiu%5Fedu%2FDocuments%2FAttachments%2Fp%5Fcontroller%5Fdemo%2Emp4&ct=1773036377745&or=OWA%2DNT%2DMail&cid=5875fa3f%2D983b%2D85f8%2D662b%2D8e0a4ec53526&ga=1&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E5d1c01ca%2De622%2D4096%2Db8b4%2D9269e2846872)
 
 ---
 
 ## PD Controller Demonstration
 
-https://indiana-my.sharepoint.com/personal/jfmedina_iu_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fjfmedina%5Fiu%5Fedu%2FDocuments%2FAttachments%2Fpd%5Fcontroller%5Fdemo%2Emp4&ct=1773036359110&or=OWA%2DNT%2DMail&cid=7e73fe97%2D65ac%2De376%2D19ce%2D48f5595a26b3&ga=1&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2Ebd4ade9a%2D7cd9%2D4cb4%2Db51c%2Deadce6f3a436
+[Lab 4 PD-Controller Demonstration Video](https://indiana-my.sharepoint.com/personal/jfmedina_iu_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fjfmedina%5Fiu%5Fedu%2FDocuments%2FAttachments%2Fpd%5Fcontroller%5Fdemo%2Emp4&ct=1773036359110&or=OWA%2DNT%2DMail&cid=7e73fe97%2D65ac%2De376%2D19ce%2D48f5595a26b3&ga=1&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2Ebd4ade9a%2D7cd9%2D4cb4%2Db51c%2Deadce6f3a436)
 
 ---
 
 ## PID Controller Demonstration
 
-https://indiana-my.sharepoint.com/personal/jfmedina_iu_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fjfmedina%5Fiu%5Fedu%2FDocuments%2FAttachments%2Fpid%5Fcontroller%5Fdemo%2Emp4&ct=1773036262934&or=OWA%2DNT%2DMail&cid=51e93cb8%2D3cef%2D0494%2D0025%2De696371de7e8&ga=1&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E3f269be3%2Da57a%2D4979%2Da80a%2Dbc85a8470f1e&isDarkMode=true
+[Lab 4 PID-Controller Demonstration Video](https://indiana-my.sharepoint.com/personal/jfmedina_iu_edu/_layouts/15/stream.aspx?id=%2Fpersonal%2Fjfmedina%5Fiu%5Fedu%2FDocuments%2FAttachments%2Fpid%5Fcontroller%5Fdemo%2Emp4&ct=1773036262934&or=OWA%2DNT%2DMail&cid=51e93cb8%2D3cef%2D0494%2D0025%2De696371de7e8&ga=1&referrer=StreamWebApp%2EWeb&referrerScenario=AddressBarCopied%2Eview%2E3f269be3%2Da57a%2D4979%2Da80a%2Dbc85a8470f1e&isDarkMode=true)
 
 ---
 
