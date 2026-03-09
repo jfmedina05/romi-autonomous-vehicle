@@ -48,6 +48,7 @@ float integral = 0.0f;
 int lastError = 0;
 
 // Logged samples for plotting later
+// Ran twice. Combined the 12 second log with the 8 second log to get 20 seconds of data
 #define LOG_SIZE 120
 
 unsigned long logTime[LOG_SIZE];
@@ -93,8 +94,8 @@ void updateLCD(const char* line1, const char* line2)
 
 void calibrateSensors()
 {
-  Serial.println("Calibration started");
-  Serial.println("Move robot left and right over black and white");
+  Serial.println("Start Calibration");
+  Serial.println("Calibrate over Line");
 
   updateLCD("Calibrating", "Move robot");
 
@@ -105,7 +106,7 @@ void calibrateSensors()
   }
 
   buzzer.play(">g32");
-  Serial.println("Calibration done");
+  Serial.println("Done Calibrating");
 }
 
 void printCalibrationSummary()
@@ -205,13 +206,13 @@ void runLineFollower()
   logSample(error, leftSpeed, rightSpeed);
 
   // Print live data to Serial Monitor
-  Serial.print("pos=");
+  Serial.print("position=");
   Serial.print(position);
-  Serial.print(" err=");
+  Serial.print(" error=");
   Serial.print(error);
-  Serial.print(" L=");
+  Serial.print(" L_Speed=");
   Serial.print(leftSpeed);
-  Serial.print(" R=");
+  Serial.print(" R_Speed=");
   Serial.println(rightSpeed);
 
   lcd.clear();
@@ -235,7 +236,7 @@ void setup()
 
   stopRobot();
 
-  Serial.println("Press A to calibrate");
+  Serial.println("A to Calibrate");
   updateLCD("Press A", "Calibrate");
 }
 
@@ -249,7 +250,7 @@ void loop()
       printCalibrationSummary();
 
       mode = WAIT_START;
-      Serial.println("Put robot on line, then press A to start");
+      Serial.println("Have robot on line, Press A");
       updateLCD("Put on line", "Press A");
     }
     else if (mode == WAIT_START)
