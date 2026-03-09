@@ -179,12 +179,10 @@ This data was exported and plotted to evaluate controller performance.
 
 ## P Controller – Error vs Time
 
-*(Insert P Controller Graph Here)*
-
 Example:
 
 ```
-![P Controller Error vs Time](images/p_controller_error.png)
+![P Controller Error v Time](https://github.iu.edu/brmadam/E321/assets/25440/ecec8fd4-b554-4b5b-a771-a4d51a2e4e7d)
 ```
 
 Discussion:
@@ -195,12 +193,10 @@ The P controller responds quickly to changes in error but tends to overshoot the
 
 ## PD Controller – Error vs Time
 
-*(Insert PD Controller Graph Here)*
-
 Example:
 
 ```
-![PD Controller Error vs Time](images/pd_controller_error.png)
+![PD Controller Error v Time](https://github.iu.edu/brmadam/E321/assets/25440/57a856ab-2282-4667-ac36-a51cc440cfef)
 ```
 
 Discussion:
@@ -216,7 +212,7 @@ The PD controller reduces oscillation by reacting to the rate of change of the e
 Example:
 
 ```
-![PID Controller Error vs Time](images/pid_controller_error.png)
+![PID Controller Error v Time](https://github.iu.edu/brmadam/E321/assets/25440/3b91a0c1-3d2d-4216-a214-8d6c8359722d)
 ```
 
 Discussion:
