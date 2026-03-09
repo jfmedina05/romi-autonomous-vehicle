@@ -1,24 +1,23 @@
 #include <QTRSensors.h>
 #include <Romi32U4.h>
 
-// -------------------- Hardware --------------------
 QTRSensors qtr;
 Romi32U4Motors motors;
 Romi32U4ButtonA buttonA;
 Romi32U4Buzzer buzzer;
 Romi32U4LCD lcd;
 
-// -------------------- Sensors --------------------
-const uint8_t SENSOR_COUNT = 6;
+static constexpr uint8_t SENSOR_COUNT = 6;
 uint16_t sensorValues[SENSOR_COUNT];
 
-// Keep the same sensor order as your working code
-const uint8_t SENSOR_PINS[SENSOR_COUNT] = {20, 21, 22, 12, 5, 0};
-const uint8_t EMITTER_PIN = 18;
+// Current sensor wiring
+static const uint8_t SENSOR_PINS[SENSOR_COUNT] = {20, 21, 22, 12, 5, 0};
+static constexpr uint8_t EMITTER_PIN = 18;
 
-const int CENTER = 2500;
+// readLineBlack() returns 0..5000 for 6 sensors
+// Center of the line is 2500
+static constexpr int CENTER = 2500;
 
-// -------------------- Modes --------------------
 enum Mode
 {
   WAIT_CALIBRATE,
@@ -28,31 +27,27 @@ enum Mode
 
 Mode mode = WAIT_CALIBRATE;
 
-// -------------------- PID Tuning --------------------
-// These are based on your code
+// Tuned controller gains
 float Kp = 0.04f;
 float Ki = 0.0005f;
 float Kd = 0.02f;
 
-// -------------------- Speed Settings --------------------
-// Base drive speed
+// Base motor speed and max command
 int baseSpeed = 100;
-
-// Max motor command
 int maxSpeed = 150;
 
-// Slow down slightly on sharper curves
-int curveSlowdown1 = 10;   // moderate error
-int curveSlowdown2 = 25;   // large error
+// Reduce speed a little on larger errors
+int curveSlowdown1 = 10;
+int curveSlowdown2 = 25;
 
-// -------------------- PID Timing --------------------
+// Run the controller every 100 ms
 unsigned long lastPID = 0;
-const unsigned long PID_PERIOD = 100;   // 100 ms
+const unsigned long PID_PERIOD = 100;
 
 float integral = 0.0f;
 int lastError = 0;
 
-// -------------------- Logging --------------------
+// Logged samples for plotting later
 #define LOG_SIZE 120
 
 unsigned long logTime[LOG_SIZE];
@@ -63,7 +58,6 @@ int logRight[LOG_SIZE];
 int logIndex = 0;
 unsigned long startTime = 0;
 
-// -------------------- Helpers --------------------
 int clampSpeed(int x)
 {
   if (x > maxSpeed) return maxSpeed;
@@ -165,28 +159,29 @@ void logSample(int error, int leftSpeed, int rightSpeed)
 
 void runLineFollower()
 {
+  // readLineBlack() gives 0..5000, so subtract center to get signed error
   int position = qtr.readLineBlack(sensorValues);
-
-  // Same error definition as your working code
   int error = CENTER - position;
 
-  // PID
+  // Proportional term
   float P = Kp * error;
 
+  // Integral term
   integral += error;
 
-  // anti-windup
+  // Clamp integral so it does not grow too large
   if (integral > 10000.0f) integral = 10000.0f;
   if (integral < -10000.0f) integral = -10000.0f;
 
   float I = Ki * integral;
 
+  // Derivative term
   int errorChange = error - lastError;
   float D = Kd * errorChange;
 
   int correction = (int)(P + I + D);
 
-  // Slight slowdown in curves so it tracks better
+  // Slow down a little on larger turns
   int driveSpeed = baseSpeed;
   int absError = abs(error);
 
@@ -206,9 +201,10 @@ void runLineFollower()
 
   lastError = error;
 
+  // Save values for plotting
   logSample(error, leftSpeed, rightSpeed);
 
-  // Optional serial monitor line for live debugging
+  // Print live data to Serial Monitor
   Serial.print("pos=");
   Serial.print(position);
   Serial.print(" err=");
@@ -239,8 +235,8 @@ void setup()
 
   stopRobot();
 
-  updateLCD("Press A", "Calibrate");
   Serial.println("Press A to calibrate");
+  updateLCD("Press A", "Calibrate");
 }
 
 void loop()
@@ -253,8 +249,8 @@ void loop()
       printCalibrationSummary();
 
       mode = WAIT_START;
-      updateLCD("Put on line", "Press A");
       Serial.println("Put robot on line, then press A to start");
+      updateLCD("Put on line", "Press A");
     }
     else if (mode == WAIT_START)
     {
@@ -265,8 +261,8 @@ void loop()
       resetLog();
 
       buzzer.play("L16 c");
-      updateLCD("Running", "");
       Serial.println("Robot started");
+      updateLCD("Running", "");
     }
     else if (mode == RUNNING)
     {
@@ -274,8 +270,8 @@ void loop()
       stopRobot();
       buzzer.play("L16 e");
 
-      updateLCD("Stopped", "Press A");
       Serial.println("Robot stopped");
+      updateLCD("Stopped", "Press A");
 
       printLog();
     }
