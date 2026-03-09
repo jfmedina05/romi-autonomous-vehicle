@@ -267,25 +267,25 @@ Add your video link here:
 ```
 Lab4/
 │
-├── code/
+├── Code/
 │   └── line_follower.ino
 │
-├── data/
+├── Data/
 │   ├── P_controller_data.csv
 │   ├── PD_controller_data.csv
 │   └── PID_controller_data.csv
 │
-├── images/
+├── Images/
 │   ├── p_controller_error.png
 │   ├── pd_controller_error.png
 │   └── pid_controller_error.png
 │
-├── videos/
+├── Videos/
 │   ├── p_controller_demo.mp4
 │   ├── pd_controller_demo.mp4
 │   └── pid_controller_demo.mp4
 │
-└── report/
+└── Report/
     └── Lab4_Report.pdf
 ```
 
