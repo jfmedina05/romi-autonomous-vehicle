@@ -1,11 +1,9 @@
-#!/usr/bin/env python3
-
 import curses
 import csv
 import os
 import time
 from collections import deque
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from a_star import AStar
@@ -17,26 +15,18 @@ DRIVE_STEP = 100
 PID_STEP_KP = 0.01
 PID_STEP_KI = 0.0005
 PID_STEP_KD = 0.005
+MAX_MOTOR_CMD = 150
 
-UI_DT = 0.10
-CONTROL_DT = 0.10
-GRAPH_HISTORY = 120
-
-MANUAL = "MANUAL"
-AUTO = "AUTO"
-
-SENSOR_COUNT = 6
-CENTER = 2500
-WEIGHTS = [0, 1000, 2000, 3000, 4000, 5000]
-
-MAX_SPEED = 300
-BASE_SPEED = 120
+UI_DT = 0.05
+CONTROL_DT = 0.05
+GRAPH_HISTORY = 160
+I2C_ADDRESS = 20
 
 
 @dataclass
 class Telemetry:
     time_s: float = 0.0
-    mode: str = MANUAL
+    mode: str = "MANUAL"
     left_speed: float = 0.0
     right_speed: float = 0.0
     left_cmd: int = 0
@@ -48,12 +38,8 @@ class Telemetry:
     enc_left: int = 0
     enc_right: int = 0
     battery_mv: int = 0
-    sensors: list = None
+    sensors: list = field(default_factory=lambda: [0, 0, 0, 0, 0, 0])
     calibrated: bool = False
-
-    def __post_init__(self):
-        if self.sensors is None:
-            self.sensors = [0, 0, 0, 0, 0, 0]
 
 
 class CSVLogger:
@@ -68,7 +54,6 @@ class CSVLogger:
     def start(self):
         if self.active:
             return self.filename
-
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.filename = os.path.join(self.log_dir, f"lab5_log_{ts}.csv")
         self.file = open(self.filename, "w", newline="")
@@ -81,25 +66,13 @@ class CSVLogger:
         self.active = True
         return self.filename
 
-    def log(self, t):
+    def log(self, t: Telemetry):
         if not self.active or self.writer is None:
             return
-
         self.writer.writerow([
-            f"{t.time_s:.3f}",
-            t.mode,
-            f"{t.left_speed:.3f}",
-            f"{t.right_speed:.3f}",
-            f"{t.line_error:.3f}",
-            f"{t.kp:.6f}",
-            f"{t.ki:.6f}",
-            f"{t.kd:.6f}",
-            t.left_cmd,
-            t.right_cmd,
-            t.battery_mv,
-            t.enc_left,
-            t.enc_right,
-            *t.sensors
+            f"{t.time_s:.3f}", t.mode, f"{t.left_speed:.3f}", f"{t.right_speed:.3f}", t.line_error,
+            f"{t.kp:.6f}", f"{t.ki:.6f}", f"{t.kd:.6f}", t.left_cmd, t.right_cmd, t.battery_mv,
+            t.enc_left, t.enc_right, *t.sensors
         ])
         self.file.flush()
 
@@ -113,51 +86,51 @@ class CSVLogger:
 
 class HardwareController:
     def __init__(self):
-        self.robot = AStar()   # Uses your existing a_star.py over I2C
+        self.robot = AStar(address=I2C_ADDRESS)
+        if not self.robot.check():
+            raise RuntimeError("A-Star not found at I2C address 0x14")
+
         self.start_time = time.time()
+        self.prev_enc_left, self.prev_enc_right = self.robot.read_encoders()
+        self.prev_speed_time = time.time()
 
         self.left_cmd = 0
         self.right_cmd = 0
-
-        self.kp = 0.04
-        self.ki = 0.0005
-        self.kd = 0.02
-
-        self.integral = 0.0
-        self.last_error = 0.0
-
-        self.mode = MANUAL
-        self.calibrated = True   # with your current AStar interface, no explicit calibrate API
-
-        self.prev_enc_left = 0
-        self.prev_enc_right = 0
-        self.prev_speed_time = time.time()
-
+        self.kp, self.ki, self.kd = self.robot.read_pid()
+        self.telemetry = Telemetry(kp=self.kp, ki=self.ki, kd=self.kd)
         self.last_button_a = False
 
-        self.telemetry = Telemetry(kp=self.kp, ki=self.ki, kd=self.kd)
+    @staticmethod
+    def clamp_motor(value):
+        return max(-MAX_MOTOR_CMD, min(MAX_MOTOR_CMD, int(value)))
+
+    @staticmethod
+    def mode_name(mode_value):
+        return "AUTO" if mode_value == 1 else "MANUAL"
+
+    def set_manual_motors(self, left, right):
+        self.left_cmd = self.clamp_motor(left)
+        self.right_cmd = self.clamp_motor(right)
+        self.robot.motors(self.left_cmd, self.right_cmd)
 
     def stop(self):
         self.left_cmd = 0
         self.right_cmd = 0
         self.robot.motors(0, 0)
 
-    def set_manual_motors(self, left, right):
-        self.left_cmd = int(max(-MAX_SPEED, min(MAX_SPEED, left)))
-        self.right_cmd = int(max(-MAX_SPEED, min(MAX_SPEED, right)))
-        self.robot.motors(self.left_cmd, self.right_cmd)
-
     def set_mode_manual(self):
-        self.mode = MANUAL
+        self.robot.write_mode(0)
         self.stop()
 
     def set_mode_auto(self):
-        self.mode = AUTO
+        self.stop()
+        self.robot.write_mode(1)
 
     def set_pid(self, kp, ki, kd):
-        self.kp = max(0.0, kp)
-        self.ki = max(0.0, ki)
-        self.kd = max(0.0, kd)
+        self.kp = max(0.0, float(kp))
+        self.ki = max(0.0, float(ki))
+        self.kd = max(0.0, float(kd))
+        self.robot.write_pid(self.kp, self.ki, self.kd)
 
     def read_button_a_pressed(self):
         a, _, _ = self.robot.read_buttons()
@@ -166,47 +139,16 @@ class HardwareController:
         self.last_button_a = pressed
         return edge
 
-    def compute_line_error(self, sensors):
-        total = sum(sensors)
-        if total <= 0:
-            position = CENTER
-        else:
-            weighted_sum = 0
-            for i in range(SENSOR_COUNT):
-                weighted_sum += sensors[i] * WEIGHTS[i]
-            position = weighted_sum / total
-
-        error = position - CENTER
-        return position, error
-
-    def run_pid(self, error):
-        self.integral += error
-        self.integral = max(-10000.0, min(10000.0, self.integral))
-
-        derivative = error - self.last_error
-        correction = self.kp * error + self.ki * self.integral + self.kd * derivative
-
-        left = int(BASE_SPEED - correction)
-        right = int(BASE_SPEED + correction)
-
-        left = max(-MAX_SPEED, min(MAX_SPEED, left))
-        right = max(-MAX_SPEED, min(MAX_SPEED, right))
-
-        self.left_cmd = left
-        self.right_cmd = right
-        self.robot.motors(left, right)
-
-        self.last_error = error
-
     def update_telemetry(self):
-        sensors = list(self.robot.read_analog())
+        mode_value = self.robot.read_mode()
+        mode = self.mode_name(mode_value)
+
         enc_left, enc_right = self.robot.read_encoders()
-        battery = self.robot.read_battery_millivolts()[0]
-
-        position, line_error = self.compute_line_error(sensors)
-
-        if self.mode == AUTO:
-            self.run_pid(line_error)
+        battery = self.robot.read_battery_millivolts()
+        analog = list(self.robot.read_analog())
+        calibrated = self.robot.read_calibrated()
+        line_error = self.robot.read_line_error()
+        auto_left, auto_right = self.robot.read_auto_speeds()
 
         now = time.time()
         dt = now - self.prev_speed_time
@@ -221,13 +163,16 @@ class HardwareController:
         self.prev_enc_right = enc_right
         self.prev_speed_time = now
 
+        display_left = auto_left if mode == "AUTO" else self.left_cmd
+        display_right = auto_right if mode == "AUTO" else self.right_cmd
+
         self.telemetry = Telemetry(
             time_s=now - self.start_time,
-            mode=self.mode,
+            mode=mode,
             left_speed=left_speed,
             right_speed=right_speed,
-            left_cmd=self.left_cmd,
-            right_cmd=self.right_cmd,
+            left_cmd=display_left,
+            right_cmd=display_right,
             line_error=line_error,
             kp=self.kp,
             ki=self.ki,
@@ -235,8 +180,8 @@ class HardwareController:
             enc_left=enc_left,
             enc_right=enc_right,
             battery_mv=battery,
-            sensors=sensors,
-            calibrated=self.calibrated
+            sensors=analog,
+            calibrated=calibrated,
         )
         return self.telemetry
 
@@ -260,34 +205,30 @@ def safe_addstr(win, y, x, text, attr=0):
 def draw_box(win, y, x, h, w, title=""):
     if h < 2 or w < 2:
         return
-
     for i in range(x, x + w):
         try:
             win.addch(y, i, ord('-'))
             win.addch(y + h - 1, i, ord('-'))
         except curses.error:
             pass
-
     for j in range(y, y + h):
         try:
             win.addch(j, x, ord('|'))
             win.addch(j, x + w - 1, ord('|'))
         except curses.error:
             pass
-
     for cy, cx in [(y, x), (y, x + w - 1), (y + h - 1, x), (y + h - 1, x + w - 1)]:
         try:
             win.addch(cy, cx, ord('+'))
         except curses.error:
             pass
-
     if title:
-        safe_addstr(win, y, x + 2, f"[{title}]")
+        safe_addstr(win, y, x + 2, f"[{title}]", curses.A_BOLD)
 
 
 def draw_error_graph(win, values, y, x, h, w):
     draw_box(win, y, x, h, w, "Line Error Graph")
-    if h < 5 or w < 6 or not values:
+    if h < 5 or w < 8 or not values:
         return
 
     plot_top = y + 1
@@ -304,18 +245,135 @@ def draw_error_graph(win, values, y, x, h, w):
         except curses.error:
             pass
 
-    max_abs = max(1.0, max(abs(v) for v in values))
     recent = list(values)[-plot_w:]
+    max_abs = max(1.0, max(abs(v) for v in recent))
+    safe_addstr(win, y + h - 1, x + 2, f"range +/-{max_abs:.0f}")
 
     for i, val in enumerate(recent):
         col = plot_left + i
         scaled = int((val / max_abs) * ((plot_h - 1) / 2))
-        row = mid_row - scaled
-        row = max(plot_top, min(plot_bottom, row))
+        row = max(plot_top, min(plot_bottom, mid_row - scaled))
         try:
             win.addch(row, col, ord('*'))
         except curses.error:
             pass
+
+
+def apply_key(ctrl: HardwareController, logger: CSVLogger, key, last_msg):
+    if key == -1:
+        return last_msg, False
+
+    if key == 27:
+        return "Exit requested", True
+
+    if key in (ord('m'), ord('M')):
+        ctrl.set_mode_manual()
+        return "MANUAL mode", False
+
+    if key in (ord('t'), ord('T')):
+        if ctrl.telemetry.calibrated:
+            ctrl.set_mode_auto()
+            return "AUTO mode", False
+        return "Calibrate first with Button A on Romi", False
+
+    if key in (ord('w'), ord('W')) and ctrl.telemetry.mode == "MANUAL":
+        ctrl.set_manual_motors(DRIVE_STEP, DRIVE_STEP)
+        return "Forward", False
+
+    if key in (ord('s'), ord('S')) and ctrl.telemetry.mode == "MANUAL":
+        ctrl.set_manual_motors(-DRIVE_STEP, -DRIVE_STEP)
+        return "Backward", False
+
+    if key in (ord('a'), ord('A')) and ctrl.telemetry.mode == "MANUAL":
+        ctrl.set_manual_motors(-DRIVE_STEP, DRIVE_STEP)
+        return "Turn left", False
+
+    if key in (ord('d'), ord('D')) and ctrl.telemetry.mode == "MANUAL":
+        ctrl.set_manual_motors(DRIVE_STEP, -DRIVE_STEP)
+        return "Turn right", False
+
+    if key in (ord('x'), ord('X'), ord(' ')):
+        ctrl.stop()
+        return "Stop", False
+
+    if key == ord('u'):
+        ctrl.set_pid(ctrl.kp + PID_STEP_KP, ctrl.ki, ctrl.kd)
+        return f"Kp = {ctrl.kp:.4f}", False
+
+    if key == ord('j'):
+        ctrl.set_pid(ctrl.kp - PID_STEP_KP, ctrl.ki, ctrl.kd)
+        return f"Kp = {ctrl.kp:.4f}", False
+
+    if key == ord('i'):
+        ctrl.set_pid(ctrl.kp, ctrl.ki + PID_STEP_KI, ctrl.kd)
+        return f"Ki = {ctrl.ki:.4f}", False
+
+    if key == ord('k'):
+        ctrl.set_pid(ctrl.kp, ctrl.ki - PID_STEP_KI, ctrl.kd)
+        return f"Ki = {ctrl.ki:.4f}", False
+
+    if key == ord('o'):
+        ctrl.set_pid(ctrl.kp, ctrl.ki, ctrl.kd + PID_STEP_KD)
+        return f"Kd = {ctrl.kd:.4f}", False
+
+    if key == ord('l'):
+        ctrl.set_pid(ctrl.kp, ctrl.ki, ctrl.kd - PID_STEP_KD)
+        return f"Kd = {ctrl.kd:.4f}", False
+
+    if key in (ord('r'), ord('R')):
+        if logger.active:
+            logger.stop()
+            return "Logging stopped", False
+        filename = logger.start()
+        return f"Logging started: {filename}", False
+
+    return last_msg, False
+
+
+def draw_ui(stdscr, ctrl: HardwareController, logger: CSVLogger, error_history, last_msg):
+    stdscr.erase()
+    h, w = stdscr.getmaxyx()
+    t = ctrl.telemetry
+
+    safe_addstr(stdscr, 0, 2, "P5 - Operator Interface", curses.A_BOLD)
+    safe_addstr(stdscr, 1, 2, "Backend: I2C / PololuRPiSlave @ 0x14")
+    safe_addstr(stdscr, 2, 2, f"Mode: {t.mode}")
+    safe_addstr(stdscr, 3, 2, f"Calibrated: {'YES' if t.calibrated else 'NO'}")
+    safe_addstr(stdscr, 4, 2, f"Logging: {'ON' if logger.active else 'OFF'}")
+    safe_addstr(stdscr, 5, 2, f"CSV: {logger.filename if logger.filename else 'None'}")
+
+    draw_box(stdscr, 7, 2, 15, 42, "Telemetry")
+    safe_addstr(stdscr, 8, 4, f"time_s      : {t.time_s:.3f}")
+    safe_addstr(stdscr, 9, 4, f"left_speed  : {t.left_speed:.2f}")
+    safe_addstr(stdscr, 10, 4, f"right_speed : {t.right_speed:.2f}")
+    safe_addstr(stdscr, 11, 4, f"left_cmd    : {t.left_cmd}")
+    safe_addstr(stdscr, 12, 4, f"right_cmd   : {t.right_cmd}")
+    safe_addstr(stdscr, 13, 4, f"line_error  : {t.line_error}")
+    safe_addstr(stdscr, 14, 4, f"enc_left    : {t.enc_left}")
+    safe_addstr(stdscr, 15, 4, f"enc_right   : {t.enc_right}")
+    safe_addstr(stdscr, 16, 4, f"battery_mv  : {t.battery_mv}")
+    safe_addstr(stdscr, 17, 4, f"sensors     : {t.sensors}")
+    safe_addstr(stdscr, 18, 4, f"Kp          : {t.kp:.4f}")
+    safe_addstr(stdscr, 19, 4, f"Ki          : {t.ki:.4f}")
+    safe_addstr(stdscr, 20, 4, f"Kd          : {t.kd:.4f}")
+
+    graph_x = 46
+    graph_y = 7
+    graph_w = max(30, w - graph_x - 2)
+    graph_h = 12
+    if graph_x + graph_w < w and graph_y + graph_h < h:
+        draw_error_graph(stdscr, error_history, graph_y, graph_x, graph_h, graph_w)
+
+    help_y = 24
+    help_h = min(8, max(0, h - help_y - 2))
+    if help_h >= 4:
+        draw_box(stdscr, help_y, 2, help_h, w - 4, "Controls")
+        safe_addstr(stdscr, help_y + 1, 4, "Button A on Romi = calibrate sensors")
+        safe_addstr(stdscr, help_y + 2, 4, "m=manual  t=auto  w/s=forward/back  a/d=left/right  x or space=stop")
+        safe_addstr(stdscr, help_y + 3, 4, "u/j=Kp +/-  i/k=Ki +/-  o/l=Kd +/-  r=log toggle  ESC=quit")
+
+    safe_addstr(stdscr, h - 2, 2, f"Status: {last_msg}")
+    stdscr.refresh()
 
 
 def run_ui(stdscr):
@@ -323,154 +381,36 @@ def run_ui(stdscr):
     stdscr.nodelay(True)
     stdscr.timeout(1)
 
-    ctrl = None
+    ctrl = HardwareController()
     logger = CSVLogger()
-    error_history = deque(maxlen=GRAPH_HISTORY)
-    last_msg = "Starting..."
-    last_control_time = time.time()
+    error_history = deque([0.0], maxlen=GRAPH_HISTORY)
+
+    last_msg = "Connected. Press Button A on Romi to calibrate, then press t for AUTO."
+    last_control_time = 0.0
 
     try:
-        ctrl = HardwareController()
-        ctrl.robot.leds(0, 0, 1)
-        last_msg = "I2C connection opened"
-    except Exception as e:
-        stdscr.erase()
-        safe_addstr(stdscr, 2, 2, "Hardware startup failed", curses.A_BOLD)
-        safe_addstr(stdscr, 4, 2, str(e))
-        safe_addstr(stdscr, 6, 2, "Check I2C wiring, power, and address 0x14.")
-        safe_addstr(stdscr, 8, 2, "Press any key to exit.")
-        stdscr.nodelay(False)
-        stdscr.getch()
-        return
+        while True:
+            key = stdscr.getch()
+            last_msg, should_exit = apply_key(ctrl, logger, key, last_msg)
+            if should_exit:
+                break
 
-    while True:
-        now = time.time()
-        key = stdscr.getch()
+            if ctrl.read_button_a_pressed():
+                last_msg = "Button A pressed on Romi"
 
-        if key == 27:
-            break
-
-        if ctrl.read_button_a_pressed():
-            last_msg = "Button A pressed"
-
-        if key in (ord('m'), ord('M')):
-            ctrl.set_mode_manual()
-            last_msg = "MANUAL mode"
-
-        elif key in (ord('t'), ord('T')):
-            ctrl.set_mode_auto()
-            last_msg = "AUTO mode"
-
-        elif key in (ord('w'), ord('W')) and ctrl.mode == MANUAL:
-            ctrl.set_manual_motors(DRIVE_STEP, DRIVE_STEP)
-            last_msg = "Forward"
-
-        elif key in (ord('s'), ord('S')) and ctrl.mode == MANUAL:
-            ctrl.set_manual_motors(-DRIVE_STEP, -DRIVE_STEP)
-            last_msg = "Backward"
-
-        elif key in (ord('a'), ord('A')) and ctrl.mode == MANUAL:
-            ctrl.set_manual_motors(-DRIVE_STEP, DRIVE_STEP)
-            last_msg = "Turn left"
-
-        elif key in (ord('d'), ord('D')) and ctrl.mode == MANUAL:
-            ctrl.set_manual_motors(DRIVE_STEP, -DRIVE_STEP)
-            last_msg = "Turn right"
-
-        elif key in (ord('x'), ord('X')):
-            ctrl.stop()
-            last_msg = "Stop"
-
-        elif key == ord('u'):
-            ctrl.set_pid(ctrl.kp + PID_STEP_KP, ctrl.ki, ctrl.kd)
-            last_msg = f"Kp = {ctrl.kp:.4f}"
-
-        elif key == ord('j'):
-            ctrl.set_pid(ctrl.kp - PID_STEP_KP, ctrl.ki, ctrl.kd)
-            last_msg = f"Kp = {ctrl.kp:.4f}"
-
-        elif key == ord('i'):
-            ctrl.set_pid(ctrl.kp, ctrl.ki + PID_STEP_KI, ctrl.kd)
-            last_msg = f"Ki = {ctrl.ki:.4f}"
-
-        elif key == ord('k'):
-            ctrl.set_pid(ctrl.kp, ctrl.ki - PID_STEP_KI, ctrl.kd)
-            last_msg = f"Ki = {ctrl.ki:.4f}"
-
-        elif key == ord('o'):
-            ctrl.set_pid(ctrl.kp, ctrl.ki, ctrl.kd + PID_STEP_KD)
-            last_msg = f"Kd = {ctrl.kd:.4f}"
-
-        elif key == ord('l'):
-            ctrl.set_pid(ctrl.kp, ctrl.ki, ctrl.kd - PID_STEP_KD)
-            last_msg = f"Kd = {ctrl.kd:.4f}"
-
-        elif key in (ord('r'), ord('R')):
-            if logger.active:
-                logger.stop()
-                last_msg = "Logging stopped"
-            else:
-                name = logger.start()
-                last_msg = f"Logging started: {name}"
-
-        if now - last_control_time >= CONTROL_DT:
-            last_control_time = now
-            try:
+            now = time.time()
+            if now - last_control_time >= CONTROL_DT:
+                last_control_time = now
                 telemetry = ctrl.update_telemetry()
                 error_history.append(telemetry.line_error)
                 if logger.active:
                     logger.log(telemetry)
-            except Exception as e:
-                last_msg = f"I2C error: {e}"
-                ctrl.stop()
 
-        t = ctrl.telemetry
-
-        stdscr.erase()
-        h, w = stdscr.getmaxyx()
-
-        safe_addstr(stdscr, 0, 2, "P5 - Operator Interface", curses.A_BOLD)
-        safe_addstr(stdscr, 1, 2, "Backend: I2C AStar")
-        safe_addstr(stdscr, 2, 2, f"Mode: {t.mode}")
-        safe_addstr(stdscr, 3, 2, f"Calibrated: {'YES' if t.calibrated else 'NO'}")
-        safe_addstr(stdscr, 4, 2, f"Logging: {'ON' if logger.active else 'OFF'}")
-        safe_addstr(stdscr, 5, 2, f"CSV: {logger.filename if logger.filename else 'None'}")
-
-        draw_box(stdscr, 7, 2, 15, 42, "Telemetry")
-        safe_addstr(stdscr, 8, 4,  f"time_s      : {t.time_s:.3f}")
-        safe_addstr(stdscr, 9, 4,  f"left_speed  : {t.left_speed:.2f}")
-        safe_addstr(stdscr, 10, 4, f"right_speed : {t.right_speed:.2f}")
-        safe_addstr(stdscr, 11, 4, f"left_cmd    : {t.left_cmd}")
-        safe_addstr(stdscr, 12, 4, f"right_cmd   : {t.right_cmd}")
-        safe_addstr(stdscr, 13, 4, f"line_error  : {t.line_error:.2f}")
-        safe_addstr(stdscr, 14, 4, f"enc_left    : {t.enc_left}")
-        safe_addstr(stdscr, 15, 4, f"enc_right   : {t.enc_right}")
-        safe_addstr(stdscr, 16, 4, f"battery_mv  : {t.battery_mv}")
-        safe_addstr(stdscr, 17, 4, f"sensors     : {t.sensors}")
-        safe_addstr(stdscr, 18, 4, f"Kp          : {t.kp:.4f}")
-        safe_addstr(stdscr, 19, 4, f"Ki          : {t.ki:.4f}")
-        safe_addstr(stdscr, 20, 4, f"Kd          : {t.kd:.4f}")
-
-        graph_x = 46
-        graph_y = 7
-        graph_w = max(30, w - graph_x - 2)
-        graph_h = 12
-        if graph_x + graph_w < w and graph_y + graph_h < h:
-            draw_error_graph(stdscr, error_history, graph_y, graph_x, graph_h, graph_w)
-
-        help_y = 24
-        if help_y < h - 6:
-            draw_box(stdscr, help_y, 2, min(8, h - help_y - 2), w - 4, "Controls")
-            safe_addstr(stdscr, help_y + 1, 4, "m=manual   t=auto   w/s=forward/back   a/d=left/right   x=stop")
-            safe_addstr(stdscr, help_y + 2, 4, "u/j=Kp +/-   i/k=Ki +/-   o/l=Kd +/-   r=log toggle   ESC=quit")
-
-        safe_addstr(stdscr, h - 2, 2, f"Status: {last_msg}")
-        stdscr.refresh()
-        time.sleep(UI_DT)
-
-    if ctrl is not None:
+            draw_ui(stdscr, ctrl, logger, error_history, last_msg)
+            time.sleep(UI_DT)
+    finally:
         ctrl.shutdown()
-    logger.stop()
+        logger.stop()
 
 
 if __name__ == "__main__":
