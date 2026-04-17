@@ -20,9 +20,9 @@ This lab focuses on mechanical design, system integration, and ensuring reliable
 ### CAD Design (Fusion 360)
 
 <p align="center">
-  <img src="assets/lab6-CAD/lab6-CAD-front.png" width="300"/>
-  <img src="assets/lab6-CAD/lab6-CAD-side.png" width="300"/>
-  <img src="assets/lab6-CAD/lab6-CAD-top.png" width="300"/>
+  <img src="Assets/lab6-CAD/lab6-CAD-front.png" width="300"/>
+  <img src="Assets/lab6-CAD/lab6-CAD-side.png" width="300"/>
+  <img src="Assets/lab6-CAD/lab6-CAD-top.png" width="300"/>
 </p>
 
 ---
@@ -30,9 +30,9 @@ This lab focuses on mechanical design, system integration, and ensuring reliable
 ### Final Implementation (Real Robot)
 
 <p align="center">
-  <img src="assets/lab6-Real/lab6-front.jpg" width="300"/>
-  <img src="assets/lab6-Real/lab6-side.jpg" width="300"/>
-  <img src="assets/lab6-Real/lab6-top.jpg" width="300"/>
+  <img src="Assets/lab6-Real/lab6-front.jpg" width="300"/>
+  <img src="Assets/lab6-Real/lab6-side.jpg" width="300"/>
+  <img src="Assets/lab6-Real/lab6-top.jpg" width="300"/>
 </p>
 
 ---
