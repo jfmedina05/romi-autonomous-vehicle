@@ -1,23 +1,41 @@
 # Lab 6 – Camera Mount Design (Frictionless Design)
 
 ## Overview
-In this lab, I designed and implemented a custom camera mount for the Romi 32U4 robot to support vision-based navigation using a Raspberry Pi Camera V2.1. The mount was created using Fusion 360 and fabricated for integration with the robot platform.
+This project focuses on the design and implementation of a custom camera mount for the Pololu Romi 32U4 robot to enable future vision-based navigation. The mount supports integration of a Raspberry Pi Camera V2.1 and was designed using Fusion 360, then fabricated and mounted onto the robot platform.
 
-This lab focuses on mechanical design, system integration, and ensuring reliable camera positioning for future computer vision tasks such as ARUCO marker detection.
+The work emphasizes mechanical design, system integration, and ensuring accurate and reliable camera positioning for applications such as ARUCO marker detection and autonomous navigation.
 
 ---
 
 ## Objective
-- Design a mount to securely attach a Raspberry Pi Camera V2.1 to the Romi robot  
-- Ensure proper camera positioning for computer vision applications  
-- Integrate the mount within the physical and spatial constraints of the robot  
-- Develop a clean and efficient mechanical design using CAD tools  
+- Design a stable mount for a Raspberry Pi Camera V2.1  
+- Ensure proper camera alignment for vision-based tasks  
+- Integrate the mount within the physical constraints of the Romi platform  
+- Apply CAD-based design principles to a real embedded system  
+
+---
+
+## Design Approach
+
+### Frictionless Design
+The mount was developed using a **frictionless design approach**, minimizing unnecessary mechanical constraints and ensuring clean integration with the robot. This approach:
+
+- Reduces stress on components  
+- Improves alignment with system geometry  
+- Simplifies assembly and integration  
+- Enhances overall structural stability  
 
 ---
 
 ## Design & Implementation
 
 ### CAD Design (Fusion 360)
+The camera mount was modeled in Fusion 360 with careful consideration of spatial constraints, ensuring:
+
+- Camera is centered along the robot’s centerline  
+- Camera is positioned approximately 2 inches above the ground  
+- Mount remains within the robot’s footprint  
+- Camera is protected from external impacts  
 
 <p align="center">
   <img src="Assets/lab6-CAD/lab6-CAD-front.png" width="300"/>
@@ -28,6 +46,7 @@ This lab focuses on mechanical design, system integration, and ensuring reliable
 ---
 
 ### Final Implementation (Real Robot)
+The design was fabricated and successfully integrated onto the Romi robot. The final system maintains structural integrity while supporting a **frictionless design**, enabling stable and efficient mounting without unnecessary mechanical interference.
 
 <p align="center">
   <img src="Assets/lab6-Real/lab6-front.jpg" width="300"/>
@@ -38,39 +57,39 @@ This lab focuses on mechanical design, system integration, and ensuring reliable
 ---
 
 ## System Integration
-The final design supports integration between:
+The final system integrates multiple subsystems:
 
-- Mechanical system (camera mount + chassis)  
-- Embedded system (Raspberry Pi)  
-- Vision system (camera sensor)  
+- **Mechanical:** Camera mount and chassis structure  
+- **Embedded:** Raspberry Pi and control hardware  
+- **Sensing:** Camera module for perception  
 
-This enables future implementation of vision-based navigation and perception tasks.
+This integration enables future expansion into vision-based robotics and autonomous navigation systems.
 
 ---
 
 ## Results
-- Successfully designed and mounted a camera system on the Romi robot  
-- Achieved proper alignment and positioning for vision applications  
-- Maintained structural integrity within robot constraints  
-- Enabled future expansion into computer vision and autonomous behavior  
+- Successfully designed and mounted a functional camera system  
+- Achieved accurate camera alignment for vision applications  
+- Maintained durability within real-world constraints  
+- Created a platform ready for computer vision integration  
 
 ---
 
 ## What I Learned
-- How to design mechanical components under real-world constraints  
+- Designing mechanical systems under real-world constraints  
 - The importance of spatial alignment in robotics systems  
-- How hardware design directly impacts sensing and perception  
-- Integration of CAD design with embedded systems  
+- How mechanical design impacts sensing and perception  
+- Integrating CAD-based design with embedded platforms  
 
 ---
 
 ## Future Improvements
-- Add adjustable camera angle for tuning field of view  
-- Reduce material usage to optimize weight  
-- Improve cable management for cleaner integration  
-- Add vibration damping for more stable image capture  
+- Add adjustable camera angle for field-of-view tuning  
+- Optimize design for reduced weight and material usage  
+- Improve cable routing and management  
+- Introduce vibration damping for more stable image capture  
 
 ---
 
 ## Repository Context
-This lab is part of a larger Romi autonomous vehicle project, combining embedded systems, control, and hardware design to build a fully integrated robotics platform.
+This lab is part of a larger Romi Autonomous Vehicle project, which combines embedded systems, control theory, and hardware design to build a fully integrated robotics platform.
