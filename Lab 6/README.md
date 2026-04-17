@@ -45,18 +45,18 @@ The camera mount was designed in Fusion 360, ensuring proper alignment with the 
 
 The design ensures the camera is positioned on the centerline and approximately 2 inches above the ground, meeting all system constraints.
 
-![Front View](../assets/lab6-CAD-front.png)
-![Side View](../assets/lab6-CAD-side.png)
-![Top View](../assets/lab6-CAD-top.png)
+![Front View](../assets/lab6-CAD/lab6-CAD-front.png)
+![Side View](../assets/lab6-CAD/lab6-CAD-side.png)
+![Top View](../assets/lab6-CAD/lab6-CAD-top.png)
 
 ---
 
 ### Final Implementation (Real Robot)
 The mount was fabricated and integrated onto the Romi robot. The final system maintains structural stability while supporting a **frictionless design**, allowing clean integration without unnecessary mechanical constraints.
 
-![Front View](../assets/lab6-front.jpg)
-![Side View](../assets/lab6-side.jpg)
-![Top View](../assets/lab6-top.jpg)
+![Front View](../assets/lab6-Real/lab6-front.jpg)
+![Side View](../assets/lab6-Real/lab6-side.jpg)
+![Top View](../assets/lab6-Real/lab6-top.jpg)
 
 ---
 
