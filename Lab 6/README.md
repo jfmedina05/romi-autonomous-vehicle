@@ -41,22 +41,22 @@ The camera mount was developed using a **frictionless design approach**, minimiz
 ## Design & Implementation
 
 ### CAD Design (Fusion 360)
-The camera mount was designed in Fusion 360, ensuring proper alignment with the Romi chassis and Raspberry Pi placement. The design maintains the camera centered on the robot while keeping it protected within the robot’s footprint.
 
-The design ensures the camera is positioned on the centerline and approximately 2 inches above the ground, meeting all system constraints.
-
-![Front View](../assets/lab6-CAD/lab6-CAD-front.png)
-![Side View](../assets/lab6-CAD/lab6-CAD-side.png)
-![Top View](../assets/lab6-CAD/lab6-CAD-top.png)
+<p align="center">
+  <img src="../assets/lab6-CAD/lab6-CAD-front.png" width="300"/>
+  <img src="../assets/lab6-CAD/lab6-CAD-side.png" width="300"/>
+  <img src="../assets/lab6-CAD/lab6-CAD-top.png" width="300"/>
+</p>
 
 ---
 
 ### Final Implementation (Real Robot)
-The mount was fabricated and integrated onto the Romi robot. The final system maintains structural stability while supporting a **frictionless design**, allowing clean integration without unnecessary mechanical constraints.
 
-![Front View](../assets/lab6-Real/lab6-front.jpg)
-![Side View](../assets/lab6-Real/lab6-side.jpg)
-![Top View](../assets/lab6-Real/lab6-top.jpg)
+<p align="center">
+  <img src="../assets/lab6-Real/lab6-front.jpg" width="300"/>
+  <img src="../assets/lab6-Real/lab6-side.jpg" width="300"/>
+  <img src="../assets/lab6-Real/lab6-top.jpg" width="300"/>
+</p>
 
 ---
 
