@@ -15,26 +15,25 @@ This lab focuses on mechanical design, system integration, and ensuring reliable
 
 ---
 
-## Design Requirements
-The camera mount was designed to meet the following constraints:
+## Design & Implementation
 
-- Camera centered along the robot’s centerline  
-- Camera positioned approximately 2 inches above the ground  
-- Mount remains within the robot’s physical footprint  
-- Camera is protected from external collisions  
-- Cable routing allows connection to the Raspberry Pi CSI port  
+### CAD Design (Fusion 360)
+
+<p align="center">
+  <img src="assets/lab6-CAD/lab6-CAD-front.png" width="300"/>
+  <img src="assets/lab6-CAD/lab6-CAD-side.png" width="300"/>
+  <img src="assets/lab6-CAD/lab6-CAD-top.png" width="300"/>
+</p>
 
 ---
 
-## Design Approach
+### Final Implementation (Real Robot)
 
-### Frictionless Design
-The camera mount was developed using a **frictionless design approach**, minimizing unnecessary constraints and mechanical interference. This results in:
-
-- Clean integration with the Romi chassis  
-- Stable mounting without excessive stress on components  
-- Improved alignment with system geometry  
-- Simpler and more efficient assembly  
+<p align="center">
+  <img src="assets/lab6-Real/lab6-front.jpg" width="300"/>
+  <img src="assets/lab6-Real/lab6-side.jpg" width="300"/>
+  <img src="assets/lab6-Real/lab6-top.jpg" width="300"/>
+</p>
 
 ---
 
