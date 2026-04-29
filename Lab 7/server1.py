@@ -35,7 +35,6 @@ if __name__ == "__main__":
     frameWidth = 640
     frameHeight = 480
 
-    # Optional command-line resolution:
     # python3 server1.py 320 240
     if len(sys.argv) == 3:
         frameWidth = int(sys.argv[1])
