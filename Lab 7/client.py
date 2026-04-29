@@ -6,8 +6,7 @@ import struct
 
 
 PI_HOST = "ise-pi-999561.luddy.indiana.edu"
-# If your actual Pi is this one instead, use:
-# PI_HOST = "ise-pi-975824.luddy.indiana.edu"
+#Used Ramiro's pi due to mine having an issue. My code is 975824
 
 
 def fromRedis(r, key_name):
