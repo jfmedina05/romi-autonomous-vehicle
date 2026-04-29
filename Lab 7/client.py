@@ -6,7 +6,8 @@ import struct
 
 
 PI_HOST = "ise-pi-999561.luddy.indiana.edu"
-#Used Ramiro's pi due to mine having an issue. My code is 975824
+# If needed, switch this to your other Pi:
+# PI_HOST = "ise-pi-975824.luddy.indiana.edu"
 
 
 def fromRedis(r, key_name):
@@ -20,7 +21,6 @@ def fromRedis(r, key_name):
 
     h, w = struct.unpack(">II", encoded[:8])
 
-    # .copy() prevents OpenCV readonly errors
     img = np.frombuffer(
         encoded,
         dtype=np.uint8,
@@ -46,9 +46,7 @@ if __name__ == "__main__":
     print("Waiting for camera frames from Redis...")
 
     while key != 27:
-        result = fromRedis(r, "latest")
-
-        frame_num, img, w, h, server_fps = result
+        frame_num, img, w, h, server_fps = fromRedis(r, "latest")
 
         if img is None:
             print("No image found yet. Make sure server1.py is running on the Pi.")
@@ -65,6 +63,8 @@ if __name__ == "__main__":
         text2 = f"Server FPS: {server_fps:.2f} | Client FPS: {client_fps:.2f}"
         text3 = "Use Lab 5 curses window to drive. Press ESC here to quit video."
 
+        # OpenCV drawing uses BGR color values.
+        # Since img is RGB, white still looks white either way.
         cv2.putText(
             img,
             text1,
@@ -95,7 +95,11 @@ if __name__ == "__main__":
             2
         )
 
-        cv2.imshow("Lab 7 Romi Camera View", img)
+        # Convert RGB to BGR only for OpenCV display.
+        # This makes the camera view look normal.
+        display_img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+
+        cv2.imshow("Lab 7 Romi Camera View", display_img)
 
         print(
             f"Frame: {frame_num} | Resolution: {w}x{h} | "
