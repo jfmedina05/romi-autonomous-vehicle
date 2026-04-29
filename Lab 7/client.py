@@ -6,7 +6,6 @@ import struct
 
 
 PI_HOST = "ise-pi-999561.luddy.indiana.edu"
-# If needed, switch this to your other Pi:
 # PI_HOST = "ise-pi-975824.luddy.indiana.edu"
 
 
@@ -61,10 +60,8 @@ if __name__ == "__main__":
 
         text1 = f"Frame: {frame_num} | Resolution: {w}x{h}"
         text2 = f"Server FPS: {server_fps:.2f} | Client FPS: {client_fps:.2f}"
-        text3 = "Use Lab 5 curses window to drive. Press ESC here to quit video."
+        text3 = "Use Lab 5 curses window to drive | ESC quits video"
 
-        # OpenCV drawing uses BGR color values.
-        # Since img is RGB, white still looks white either way.
         cv2.putText(
             img,
             text1,
@@ -95,16 +92,12 @@ if __name__ == "__main__":
             2
         )
 
-        # Convert RGB to BGR only for OpenCV display.
-        # This makes the camera view look normal.
-        display_img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-
-        cv2.imshow("Lab 7 Romi Camera View", display_img)
-
         print(
             f"Frame: {frame_num} | Resolution: {w}x{h} | "
             f"Server FPS: {server_fps:.2f} | Client FPS: {client_fps:.2f}"
         )
+
+        cv2.imshow("Lab 7 Romi Camera View", img)
 
         key = cv2.waitKey(1) & 0xFF
 
