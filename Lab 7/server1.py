@@ -32,8 +32,6 @@ if __name__ == "__main__":
     frameWidth = 640
     frameHeight = 480
 
-    # Optional:
-    # python3 server1.py 320 240
     if len(sys.argv) == 3:
         frameWidth = int(sys.argv[1])
         frameHeight = int(sys.argv[2])
@@ -64,10 +62,6 @@ if __name__ == "__main__":
             print("Failed to capture frame")
             continue
 
-        # IMPORTANT:
-        # Do not convert colors here.
-        # The image is stored in Redis as RGB.
-
         current_time = time.time()
         delta_time = current_time - last_time
         last_time = current_time
@@ -76,8 +70,6 @@ if __name__ == "__main__":
 
         toRedis(r, img, "latest", count, fps)
 
-        print(
-            f"Frame: {count} | Resolution: {frameWidth}x{frameHeight} | FPS: {fps:.2f}"
-        )
+        print(f"Frame: {count} | Resolution: {frameWidth}x{frameHeight} | FPS: {fps:.2f}")
 
         count += 1
