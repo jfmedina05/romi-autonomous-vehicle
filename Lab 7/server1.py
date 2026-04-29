@@ -12,66 +12,105 @@ r = redis.Redis(
     password='e101class'
 )
 
-def detect_line(img):
-    """
-    Detects a dark line in the lower part of the camera image.
-    Returns: line_detected, cx, cy, mask
-    """
+def get_aruco_tools():
+    dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
+
+    try:
+        parameters = cv2.aruco.DetectorParameters()
+        detector = cv2.aruco.ArucoDetector(dictionary, parameters)
+        return dictionary, parameters, detector
+    except AttributeError:
+        parameters = cv2.aruco.DetectorParameters_create()
+        return dictionary, parameters, None
+
+
+def detect_aruco(img, detector, dictionary, parameters):
+    gray = cv2.cvtColor(img, cv2.COLOR_RGB2GRAY)
+
+    if detector is not None:
+        corners, ids, rejected = detector.detectMarkers(gray)
+    else:
+        corners, ids, rejected = cv2.aruco.detectMarkers(
+            gray,
+            dictionary,
+            parameters=parameters
+        )
+
+    marker_detected = ids is not None and len(ids) > 0
+
+    marker_id = -1
+    marker_x = -1
+    marker_y = -1
+    error = 0
+    command = "SEARCH"
+
+    if marker_detected:
+        cv2.aruco.drawDetectedMarkers(img, corners, ids, borderColor=(0, 255, 0))
+
+        first_marker = corners[0][0]
+        marker_id = int(ids[0][0])
+
+        marker_x = int(np.mean(first_marker[:, 0]))
+        marker_y = int(np.mean(first_marker[:, 1]))
+
+        frame_center = img.shape[1] // 2
+        error = marker_x - frame_center
+
+        cv2.circle(img, (marker_x, marker_y), 8, (255, 0, 0), -1)
+
+        if error < -60:
+            command = "LEFT"
+        elif error > 60:
+            command = "RIGHT"
+        else:
+            command = "FORWARD"
+
+        cv2.putText(
+            img,
+            f"ID: {marker_id} CMD: {command} ERR: {error}",
+            (20, 40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (255, 255, 255),
+            2
+        )
+    else:
+        cv2.putText(
+            img,
+            "NO ARUCO MARKER",
+            (20, 40),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.8,
+            (255, 255, 255),
+            2
+        )
+
+    return marker_detected, marker_id, marker_x, marker_y, error, command
+
+
+def toRedis(r, img, n, fnum, detected, marker_id, marker_x, marker_y, error, command):
     h, w = img.shape[:2]
 
-    # Use bottom half of the image because the line is on the floor
-    roi = img[h // 2:h, :]
-
-    gray = cv2.cvtColor(roi, cv2.COLOR_RGB2GRAY)
-
-    # Detect dark line
-    _, mask = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
-
-    # Remove noise
-    kernel = np.ones((5, 5), np.uint8)
-    mask = cv2.erode(mask, kernel, iterations=1)
-    mask = cv2.dilate(mask, kernel, iterations=2)
-
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-
-    if len(contours) == 0:
-        return False, -1, -1, mask
-
-    largest = max(contours, key=cv2.contourArea)
-    area = cv2.contourArea(largest)
-
-    if area < 500:
-        return False, -1, -1, mask
-
-    M = cv2.moments(largest)
-
-    if M["m00"] == 0:
-        return False, -1, -1, mask
-
-    cx = int(M["m10"] / M["m00"])
-    cy = int(M["m01"] / M["m00"]) + h // 2
-
-    return True, cx, cy, mask
-
-
-def toRedis(r, a, n, fnum, line_detected, cx, cy):
-    h, w = a.shape[:2]
-
     shape = struct.pack('>II', h, w)
-    encoded = shape + a.tobytes()
+    encoded = shape + img.tobytes()
 
     r.hset(n, mapping={
         'frame': fnum,
         'image': encoded,
-        'line_detected': int(line_detected),
-        'line_x': cx,
-        'line_y': cy
+        'aruco_detected': int(detected),
+        'aruco_id': marker_id,
+        'aruco_x': marker_x,
+        'aruco_y': marker_y,
+        'aruco_error': error,
+        'aruco_command': command
     })
 
 
 if __name__ == '__main__':
     frameWidth = 640
     frameHeight = 480
+
+    dictionary, parameters, detector = get_aruco_tools()
 
     picam2 = Picamera2()
 
@@ -95,18 +134,29 @@ if __name__ == '__main__':
             print("Failed to capture frame")
             continue
 
-        line_detected, cx, cy, mask = detect_line(img)
+        detected, marker_id, marker_x, marker_y, error, command = detect_aruco(
+            img,
+            detector,
+            dictionary,
+            parameters
+        )
 
-        # Draw detection overlay
-        if line_detected:
-            cv2.circle(img, (cx, cy), 10, (255, 0, 0), -1)
-            cv2.putText(img, "LINE DETECTED", (20, 40),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
-        else:
-            cv2.putText(img, "NO LINE", (20, 40),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+        toRedis(
+            r,
+            img,
+            'latest',
+            count,
+            detected,
+            marker_id,
+            marker_x,
+            marker_y,
+            error,
+            command
+        )
 
-        toRedis(r, img, 'latest', count, line_detected, cx, cy)
+        print(
+            f"Frame {count} | Detected: {detected} | "
+            f"ID: {marker_id} | x={marker_x} | error={error} | command={command}"
+        )
 
         count += 1
-        print(f"Frame {count} | Line detected: {line_detected} | x={cx}, y={cy}")
