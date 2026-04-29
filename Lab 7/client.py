@@ -12,7 +12,8 @@ def fromRedis(r, n):
 
     h, w = struct.unpack('>II', encoded[:8])
 
-    img = np.frombuffer(encoded, dtype=np.uint8, offset=8).reshape(h, w, 3)
+    # .copy() makes the image writable for cv2.putText()
+    img = np.frombuffer(encoded, dtype=np.uint8, offset=8).reshape(h, w, 3).copy()
 
     line_detected = int(imdata.get(b'line_detected', 0))
     line_x = int(imdata.get(b'line_x', -1))
@@ -50,8 +51,15 @@ if __name__ == '__main__':
 
         text = f"Frame: {fnum} | FPS: {fps:.2f} | Mode: {mode} | Line: {line_detected}"
 
-        cv2.putText(img, text, (20, img.shape[0] - 20),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+        cv2.putText(
+            img,
+            text,
+            (20, img.shape[0] - 20),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2
+        )
 
         cv2.imshow('Romi Video Driver', img)
 
@@ -66,3 +74,5 @@ if __name__ == '__main__':
         elif key == ord('a'):
             mode = "AUTO"
             r.set("mode", "AUTO")
+
+    cv2.destroyAllWindows()
