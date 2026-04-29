@@ -4,71 +4,104 @@ import numpy as np
 from time import time
 import struct
 
-def fromRedis(r, n):
-    imdata = r.hgetall(n)
 
-    encoded = imdata[b'image']
-    fnum = int(imdata[b'frame'])
+PI_HOST = "ise-pi-999561.luddy.indiana.edu"
+# If your actual Pi is this one instead, use:
+# PI_HOST = "ise-pi-975824.luddy.indiana.edu"
 
-    h, w = struct.unpack('>II', encoded[:8])
 
+def fromRedis(r, key_name):
+    imdata = r.hgetall(key_name)
+
+    if not imdata or b"image" not in imdata:
+        return None, None, None, None, None
+
+    encoded = imdata[b"image"]
+    frame_num = int(imdata[b"frame"])
+
+    h, w = struct.unpack(">II", encoded[:8])
+
+    # .copy() prevents OpenCV readonly errors
     img = np.frombuffer(
         encoded,
         dtype=np.uint8,
         offset=8
     ).reshape(h, w, 3).copy()
 
-    detected = int(imdata.get(b'aruco_detected', 0))
-    marker_id = int(imdata.get(b'aruco_id', -1))
-    marker_x = int(imdata.get(b'aruco_x', -1))
-    marker_y = int(imdata.get(b'aruco_y', -1))
-    error = int(imdata.get(b'aruco_error', 0))
-    command = imdata.get(b'aruco_command', b'SEARCH').decode()
+    server_fps = float(imdata.get(b"fps", 0.0))
 
-    return fnum, img, detected, marker_id, marker_x, marker_y, error, command
+    return frame_num, img, w, h, server_fps
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     r = redis.Redis(
-        host='ise-pi-999561.luddy.indiana.edu',
+        host=PI_HOST,
         port=6379,
         db=0,
-        password='e101class'
+        password="e101class"
     )
 
     key = 0
     last_time = time()
 
+    print("Waiting for camera frames from Redis...")
+
     while key != 27:
+        result = fromRedis(r, "latest")
+
+        frame_num, img, w, h, server_fps = result
+
+        if img is None:
+            print("No image found yet. Make sure server1.py is running on the Pi.")
+            key = cv2.waitKey(100) & 0xFF
+            continue
+
         current_time = time()
         delta_time = current_time - last_time
         last_time = current_time
 
-        fnum, img, detected, marker_id, marker_x, marker_y, error, command = fromRedis(
-            r,
-            'latest'
-        )
+        client_fps = 1.0 / delta_time if delta_time > 0 else 0.0
 
-        fps = 1 / delta_time if delta_time > 0 else 0
+        text1 = f"Frame: {frame_num} | Resolution: {w}x{h}"
+        text2 = f"Server FPS: {server_fps:.2f} | Client FPS: {client_fps:.2f}"
+        text3 = "Use Lab 5 curses window to drive. Press ESC here to quit video."
 
-        text = (
-            f"Frame: {fnum} | FPS: {fps:.2f} | "
-            f"Aruco: {detected} | ID: {marker_id} | Command: {command}"
+        cv2.putText(
+            img,
+            text1,
+            (20, 30),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2
         )
 
         cv2.putText(
             img,
-            text,
-            (20, img.shape[0] - 20),
+            text2,
+            (20, 60),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            img,
+            text3,
+            (20, h - 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
             (255, 255, 255),
             2
         )
 
-        cv2.imshow('Romi ArUco Video Driver', img)
+        cv2.imshow("Lab 7 Romi Camera View", img)
 
-        print(text)
+        print(
+            f"Frame: {frame_num} | Resolution: {w}x{h} | "
+            f"Server FPS: {server_fps:.2f} | Client FPS: {client_fps:.2f}"
+        )
 
         key = cv2.waitKey(1) & 0xFF
 
