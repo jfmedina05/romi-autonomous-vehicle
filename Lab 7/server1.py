@@ -6,7 +6,7 @@ import struct
 import numpy as np
 
 r = redis.Redis(
-        host = 'ise-pi-975824.luddy.indiana.edu',
+        host = 'ise-pi-999561.luddy.indiana.edu',#'ise-pi-975824.luddy.indiana.edu',
         port = 6379,
         db = 0,
         password = 'e101class'
