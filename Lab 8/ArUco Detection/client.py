@@ -5,8 +5,8 @@ from time import time
 import struct
 
 
+# Laptop connects to Pi 999561
 PI_HOST = "ise-pi-999561.luddy.indiana.edu"
-# PI_HOST = "ise-pi-975824.luddy.indiana.edu"
 
 
 def fromRedis(r, key_name):
@@ -66,11 +66,12 @@ if __name__ == "__main__":
         text1 = f"Frame: {frame_num} | Resolution: {w}x{h}"
         text2 = f"Server FPS: {server_fps:.2f} | Client FPS: {client_fps:.2f}"
         text3 = f"ArUco ID: {aruco_id} | Action: {aruco_action}"
+        text4 = "ESC quits video"
 
         cv2.putText(
             img,
             text1,
-            (20, h - 70),
+            (20, h - 95),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
             (255, 255, 255),
@@ -80,7 +81,7 @@ if __name__ == "__main__":
         cv2.putText(
             img,
             text2,
-            (20, h - 45),
+            (20, h - 70),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
             (255, 255, 255),
@@ -90,6 +91,16 @@ if __name__ == "__main__":
         cv2.putText(
             img,
             text3,
+            (20, h - 45),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            img,
+            text4,
             (20, h - 20),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
