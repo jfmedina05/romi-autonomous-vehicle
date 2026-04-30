@@ -4,56 +4,107 @@ import numpy as np
 from time import time
 import struct
 
-def fromRedis(r, n):
-    imdata = r.hgetall(n)
 
-<<<<<<< HEAD
-    endcoded = imdata[b'image']
-=======
-    encoded = imdata[b'image']
->>>>>>> e2d84a6dde96565a65a6a15578fe3f34409fc7a9
-    fnum = imdata[b'frame']
+PI_HOST = "ise-pi-999561.luddy.indiana.edu"
+# PI_HOST = "ise-pi-975824.luddy.indiana.edu"
 
-    h, w = struct.unpack('>II', encoded[:8])
 
-    a = np.frombuffer(encoded, dtype=np.uint8, offset=8).reshape(h, w, 3)
+def fromRedis(r, key_name):
+    imdata = r.hgetall(key_name)
 
-    return (fnum, a)
+    if not imdata or b"image" not in imdata:
+        return None, None, None, None, None, None, None
 
-<<<<<<< HEAD
-if __name__ == '__main__':
+    encoded = imdata[b"image"]
+    frame_num = int(imdata[b"frame"])
+
+    h, w = struct.unpack(">II", encoded[:8])
+
+    img = np.frombuffer(
+        encoded,
+        dtype=np.uint8,
+        offset=8
+    ).reshape(h, w, 3).copy()
+
+    server_fps = float(imdata.get(b"fps", 0.0))
+    aruco_id = int(imdata.get(b"aruco_id", -1))
+    aruco_action = imdata.get(b"aruco_action", b"NONE").decode()
+
+    return frame_num, img, w, h, server_fps, aruco_id, aruco_action
+
+
+if __name__ == "__main__":
     r = redis.Redis(
-            host = 'ise-pi-975824.luddy.indiana.edu',
-            port = 6379,
-            db = 0,
-            password = 'e101class'
-=======
-
-if __name__ == '__main__':
-    r = redis.Redis(
-        host = 'ise-pi-999561.luddy.indiana.edu',#'ise-pi-975824.luddy.indiana.edu',
-        port = 6379,
-        db = 0,
-        password = 'e101class'
->>>>>>> e2d84a6dde96565a65a6a15578fe3f34409fc7a9
+        host=PI_HOST,
+        port=6379,
+        db=0,
+        password="e101class"
     )
 
     key = 0
-    last_time = 0
+    last_time = time()
+
+    print("Waiting for camera frames from Redis...")
 
     while key != 27:
-        time_temp = time()
-<<<<<<< HEAD
-        delta_time = int((time_temp = last_time) * 1000)
-=======
-        delta_time = int((time_temp - last_time) * 1000)
->>>>>>> e2d84a6dde96565a65a6a15578fe3f34409fc7a9
-        last_time = time_temp
+        frame_num, img, w, h, server_fps, aruco_id, aruco_action = fromRedis(
+            r,
+            "latest"
+        )
 
-        fnum, img = fromRedis(r, 'latest')
+        if img is None:
+            print("No image found yet. Make sure server1.py is running on the Pi.")
+            key = cv2.waitKey(100) & 0xFF
+            continue
 
-        print(f"read image with shape {img.shape} frame={fnum} delta={delta_time} ms frame rate={int(1/(delta_time/1000))} fps")
+        current_time = time()
+        delta_time = current_time - last_time
+        last_time = current_time
 
-        cv2.imshow('image', img)
+        client_fps = 1.0 / delta_time if delta_time > 0 else 0.0
+
+        text1 = f"Frame: {frame_num} | Resolution: {w}x{h}"
+        text2 = f"Server FPS: {server_fps:.2f} | Client FPS: {client_fps:.2f}"
+        text3 = f"ArUco ID: {aruco_id} | Action: {aruco_action}"
+
+        cv2.putText(
+            img,
+            text1,
+            (20, h - 70),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            img,
+            text2,
+            (20, h - 45),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2
+        )
+
+        cv2.putText(
+            img,
+            text3,
+            (20, h - 20),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            (255, 255, 255),
+            2
+        )
+
+        print(
+            f"Frame: {frame_num} | Resolution: {w}x{h} | "
+            f"Server FPS: {server_fps:.2f} | Client FPS: {client_fps:.2f} | "
+            f"ArUco ID: {aruco_id} | Action: {aruco_action}"
+        )
+
+        cv2.imshow("Lab 8 ArUco Camera View", img)
 
         key = cv2.waitKey(1) & 0xFF
+
+    cv2.destroyAllWindows()
