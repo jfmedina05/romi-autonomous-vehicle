@@ -52,8 +52,6 @@ if __name__ == "__main__":
             key = cv2.waitKey(100) & 0xFF
             continue
 
-        img = cv2.flip(img, -1)
-
         current_time = time()
         delta_time = current_time - last_time
         last_time = current_time
