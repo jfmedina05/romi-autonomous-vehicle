@@ -7,6 +7,7 @@ import sys
 import numpy as np
 
 
+# Server runs on the Pi, so Redis should be localhost
 r = redis.Redis(
     host="localhost",
     port=6379,
@@ -15,17 +16,18 @@ r = redis.Redis(
 )
 
 
-# Change this if your markers use a different 4x4 dictionary
+# Use the 4x4 dictionary.
+# If your marker generator used a different one, change this line.
 ARUCO_DICT_TYPE = cv2.aruco.DICT_4X4_50
 
-# Set this to True if your camera image is upside down
+# Set to True if your camera is upside down
 FLIP_IMAGE = True
 
 
 def setup_aruco_detector():
     aruco_dict = cv2.aruco.getPredefinedDictionary(ARUCO_DICT_TYPE)
 
-    # Newer OpenCV versions
+    # New OpenCV versions
     if hasattr(cv2.aruco, "ArucoDetector"):
         parameters = cv2.aruco.DetectorParameters()
         detector = cv2.aruco.ArucoDetector(aruco_dict, parameters)
@@ -53,12 +55,13 @@ def detect_aruco_markers(img, aruco_dict, parameters, detector):
     action = "NONE"
 
     if ids is not None and len(ids) > 0:
-        # Draw blue boxes around detected markers
+        # Draw box around detected marker.
+        # Since the image is RGB, this color is blue in RGB.
         cv2.aruco.drawDetectedMarkers(
             image=img,
             corners=corners,
             ids=ids,
-            borderColor=(255, 0, 0)
+            borderColor=(0, 0, 255)
         )
 
         detected_id = int(ids[0][0])
@@ -70,9 +73,8 @@ def detect_aruco_markers(img, aruco_dict, parameters, detector):
         elif detected_id == 7:
             action = "LOW_SPEED"
         else:
-            action = "UNKNOWN_MARKER"
+            action = "UNKNOWN"
 
-        # Draw marker action text
         cv2.putText(
             img,
             f"ID: {detected_id} | ACTION: {action}",
@@ -82,7 +84,6 @@ def detect_aruco_markers(img, aruco_dict, parameters, detector):
             (255, 255, 255),
             2
         )
-
     else:
         cv2.putText(
             img,
@@ -118,6 +119,8 @@ if __name__ == "__main__":
     frameWidth = 640
     frameHeight = 480
 
+    # Optional resolution command:
+    # python3 server1.py 320 240
     if len(sys.argv) == 3:
         frameWidth = int(sys.argv[1])
         frameHeight = int(sys.argv[2])
@@ -150,7 +153,7 @@ if __name__ == "__main__":
             print("Failed to capture frame")
             continue
 
-        # Flip before detection/drawing so the marker box and text are not upside down
+        # Flip image if the camera is mounted upside down
         if FLIP_IMAGE:
             img = cv2.flip(img, -1)
 
