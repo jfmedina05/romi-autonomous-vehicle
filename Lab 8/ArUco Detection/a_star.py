@@ -12,11 +12,11 @@ class AStar:
         for i in range(5):
             try:
                 self.bus.write_byte(self.address, register)
-                time.sleep(0.0001)
+                time.sleep(0.001)
                 byte_list = [self.bus.read_byte(self.address) for _ in range(size)]
                 return struct.unpack(fmt, bytes(byte_list))
             except OSError:
-                time.sleep(0.01)
+                time.sleep(0.02)
                 if i == 4:
                     raise
 
@@ -25,15 +25,15 @@ class AStar:
         for i in range(5):
             try:
                 self.bus.write_i2c_block_data(self.address, register, data_array)
-                time.sleep(0.0001)
+                time.sleep(0.001)
                 return
             except OSError:
-                time.sleep(0.01)
+                time.sleep(0.02)
                 if i == 4:
                     raise
 
     def motors(self, left, right):
-        self.write_pack(6, "hh", left, right)
+        self.write_pack(6, "hh", int(left), int(right))
 
     def read_battery_millivolts(self):
         return self.read_unpack(10, 2, "H")
@@ -45,7 +45,7 @@ class AStar:
         return self.read_unpack(39, 4, "hh")
 
     def set_auto_mode(self, enable):
-        self.write_pack(43, "?", enable)
+        self.write_pack(43, "?", bool(enable))
 
     def trigger_calibration(self):
         self.write_pack(44, "?", True)
@@ -54,7 +54,12 @@ class AStar:
         return self.read_unpack(44, 1, "?")[0]
 
     def write_pid(self, kp, ki, kd):
-        self.write_pack(45, "fff", kp, ki, kd)
+        self.write_pack(45, "fff", float(kp), float(ki), float(kd))
 
     def read_p5_telemetry(self):
         return self.read_unpack(57, 8, "fhh")
+
+    # New for Project 8 speed signs.
+    # This assumes you added int16_t baseSpeedCmd at the END of the Arduino Data struct.
+    def set_base_speed(self, speed):
+        self.write_pack(65, "h", int(speed))
