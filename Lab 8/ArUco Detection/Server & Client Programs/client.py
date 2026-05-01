@@ -6,7 +6,7 @@ import struct
 
 
 # Laptop connects to Pi 999561
-PI_HOST = "ise-pi-999561.luddy.indiana.edu"
+PI_HOST = "140.182.152.83"
 
 
 def fromRedis(r, key_name):
