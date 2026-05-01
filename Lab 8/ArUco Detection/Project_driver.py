@@ -17,6 +17,7 @@ def create_graph(error, width=40):
 
 def main(stdscr):
     romi = AStar()
+
     curses.curs_set(0)
     stdscr.nodelay(True)
     stdscr.keypad(True)
@@ -32,13 +33,20 @@ def main(stdscr):
     start_time = 0
 
     romi.set_auto_mode(False)
-    time.sleep(0.01)
+    time.sleep(0.05)
     romi.motors(0, 0)
 
     kp, ki, kd = 1.7, 0.3, 1.2
     romi.write_pid(kp, ki, kd)
 
     current_left, current_right = 0, 0
+
+    sensors = (0, 0, 0, 0, 0, 0)
+    encoders = (0, 0)
+    batt = (0,)
+    error = 0.0
+    l_cmd = 0
+    r_cmd = 0
 
     while True:
         char = stdscr.getch()
@@ -49,6 +57,7 @@ def main(stdscr):
         elif char == ord("m"):
             mode = "MANUAL"
             romi.set_auto_mode(False)
+            time.sleep(0.05)
             romi.motors(0, 0)
             current_left, current_right = 0, 0
             status_msg = "Switched to Manual Control."
@@ -62,16 +71,21 @@ def main(stdscr):
             status_msg = "Calibrating..."
             stdscr.addstr(18, 0, f"Status: {status_msg}                   ")
             stdscr.refresh()
-            romi.trigger_calibration()
-            while romi.check_if_calibrating():
-                time.sleep(0.5)
-            status_msg = "Calibration complete."
+
+            try:
+                romi.trigger_calibration()
+                while romi.check_if_calibrating():
+                    time.sleep(0.5)
+                status_msg = "Calibration complete."
+            except OSError:
+                status_msg = "I2C error during calibration. Try again."
 
         elif char == ord("L") or char == ord("l"):
             if is_logging:
                 is_logging = False
                 if csv_file:
                     csv_file.close()
+                    csv_file = None
                 status_msg = f"Saved log to {log_filename}"
             else:
                 log_filename = f"log_{time.strftime('%Y%m%d_%H%M%S')}.csv"
@@ -96,27 +110,45 @@ def main(stdscr):
 
         elif char == ord("P"):
             kp = round(kp + 0.1, 2)
-            romi.write_pid(kp, ki, kd)
+            try:
+                romi.write_pid(kp, ki, kd)
+            except OSError:
+                status_msg = "I2C error writing Kp."
 
         elif char == ord("p"):
             kp = max(0.0, round(kp - 0.1, 2))
-            romi.write_pid(kp, ki, kd)
+            try:
+                romi.write_pid(kp, ki, kd)
+            except OSError:
+                status_msg = "I2C error writing Kp."
 
         elif char == ord("I"):
             ki = round(ki + 0.05, 2)
-            romi.write_pid(kp, ki, kd)
+            try:
+                romi.write_pid(kp, ki, kd)
+            except OSError:
+                status_msg = "I2C error writing Ki."
 
         elif char == ord("i"):
             ki = max(0.0, round(ki - 0.05, 2))
-            romi.write_pid(kp, ki, kd)
+            try:
+                romi.write_pid(kp, ki, kd)
+            except OSError:
+                status_msg = "I2C error writing Ki."
 
         elif char == ord("D"):
             kd = round(kd + 0.1, 2)
-            romi.write_pid(kp, ki, kd)
+            try:
+                romi.write_pid(kp, ki, kd)
+            except OSError:
+                status_msg = "I2C error writing Kd."
 
         elif char == ord("d"):
             kd = max(0.0, round(kd - 0.1, 2))
-            romi.write_pid(kp, ki, kd)
+            try:
+                romi.write_pid(kp, ki, kd)
+            except OSError:
+                status_msg = "I2C error writing Kd."
 
         elif mode == "MANUAL" and char != -1:
             target_left, target_right = current_left, current_right
@@ -124,33 +156,55 @@ def main(stdscr):
             if char == curses.KEY_UP:
                 target_left, target_right = 100, 100
                 status_msg = "Driving forward"
+
             elif char == curses.KEY_DOWN:
                 target_left, target_right = -100, -100
                 status_msg = "Driving reverse"
+
             elif char == curses.KEY_LEFT:
                 target_left, target_right = -75, 75
                 status_msg = "Turning left"
+
             elif char == curses.KEY_RIGHT:
                 target_left, target_right = 75, -75
                 status_msg = "Turning right"
+
             elif char == ord(" "):
                 target_left, target_right = 0, 0
                 status_msg = "Motors stopped"
 
             if target_left != current_left or target_right != current_right:
-                romi.motors(target_left, target_right)
-                current_left, current_right = target_left, target_right
+                try:
+                    romi.motors(target_left, target_right)
+                    current_left, current_right = target_left, target_right
+                except OSError:
+                    status_msg = "I2C motor command failed. Retrying..."
 
-        sensors = romi.read_analog()
-        time.sleep(0.01)
+        # I2C reads are protected so the program does not crash on one failed read
+        try:
+            sensors = romi.read_analog()
+            time.sleep(0.05)
 
-        encoders = romi.read_encoders()
-        time.sleep(0.01)
+            encoders = romi.read_encoders()
+            time.sleep(0.05)
 
-        batt = romi.read_battery_millivolts()
-        time.sleep(0.01)
+            batt = romi.read_battery_millivolts()
+            time.sleep(0.05)
 
-        error, l_cmd, r_cmd = romi.read_p5_telemetry()
+            error, l_cmd, r_cmd = romi.read_p5_telemetry()
+            time.sleep(0.05)
+
+        except OSError:
+            status_msg = "I2C read failed briefly. Retrying..."
+
+            sensors = (0, 0, 0, 0, 0, 0)
+            encoders = (0, 0)
+            batt = (0,)
+            error = 0.0
+            l_cmd = 0
+            r_cmd = 0
+
+            time.sleep(0.1)
 
         if is_logging and csv_writer:
             t = round(time.time() - start_time, 2)
@@ -189,11 +243,18 @@ def main(stdscr):
         stdscr.addstr(18, 0, f"Status: {status_msg}")
         stdscr.refresh()
 
+        # Slight delay to avoid hammering the I2C bus too fast
+        time.sleep(0.05)
+
     if csv_file:
         csv_file.close()
 
-    romi.set_auto_mode(False)
-    romi.motors(0, 0)
+    try:
+        romi.set_auto_mode(False)
+        time.sleep(0.05)
+        romi.motors(0, 0)
+    except OSError:
+        pass
 
 
 if __name__ == "__main__":
