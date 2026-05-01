@@ -22,6 +22,7 @@ class AStar:
 
     def write_pack(self, register, fmt, *data):
         data_array = list(struct.pack(fmt, *data))
+
         for i in range(5):
             try:
                 self.bus.write_i2c_block_data(self.address, register, data_array)
@@ -59,7 +60,8 @@ class AStar:
     def read_p5_telemetry(self):
         return self.read_unpack(57, 8, "fhh")
 
-    # New for Project 8 speed signs.
-    # This assumes you added int16_t baseSpeedCmd at the END of the Arduino Data struct.
+    def read_line_error(self):
+        return self.read_unpack(57, 4, "f")
+
     def set_base_speed(self, speed):
         self.write_pack(65, "h", int(speed))
