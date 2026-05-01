@@ -9,7 +9,7 @@ import numpy as np
 
 # Server runs on the Pi, so Redis should be localhost
 r = redis.Redis(
-    host="localhost",
+    host= "localhost",
     port=6379,
     db=0,
     password="e101class"
@@ -116,8 +116,8 @@ def toRedis(r, img, key_name, frame_num, fps, detected_id, action):
 
 
 if __name__ == "__main__":
-    frameWidth = 640
-    frameHeight = 480
+    frameWidth = 320
+    frameHeight = 240
 
     # Optional resolution command:
     # python3 server1.py 320 240
