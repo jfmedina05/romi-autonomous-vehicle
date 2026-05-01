@@ -1,7 +1,23 @@
 import curses
 import time
 import csv
+import redis
 from a_star import AStar
+
+
+# Redis is running on the same Pi as server1.py
+r = redis.Redis(
+    host="localhost",
+    port=6379,
+    db=0,
+    password="e101class"
+)
+
+
+HIGH_SPEED = 180
+LOW_SPEED = 100
+STOP_TIME = 2.0
+MARKER_COOLDOWN = 3.0
 
 
 def create_graph(error, width=40):
@@ -23,6 +39,23 @@ def safe_call(func, *args):
         return False
 
 
+def read_marker_from_redis():
+    try:
+        marker = r.hget("latest", "aruco_id")
+        action = r.hget("latest", "aruco_action")
+
+        if marker is None:
+            return -1, "NONE"
+
+        marker_id = int(marker)
+        marker_action = action.decode() if action else "NONE"
+
+        return marker_id, marker_action
+
+    except Exception:
+        return -1, "NONE"
+
+
 def main(stdscr):
     romi = AStar()
 
@@ -33,6 +66,7 @@ def main(stdscr):
 
     mode = "MANUAL"
     status_msg = "Ready."
+    marker_msg = "No marker detected."
 
     is_logging = False
     log_filename = ""
@@ -41,6 +75,7 @@ def main(stdscr):
     start_time = 0
 
     kp, ki, kd = 1.7, 0.3, 1.2
+    base_speed = HIGH_SPEED
 
     current_left, current_right = 0, 0
 
@@ -51,7 +86,10 @@ def main(stdscr):
     l_cmd = 0
     r_cmd = 0
 
-    # Startup I2C setup with protection
+    stop_until = 0
+    last_marker_id = -1
+    last_marker_time = 0
+
     try:
         romi.set_auto_mode(False)
         time.sleep(0.1)
@@ -60,6 +98,9 @@ def main(stdscr):
         time.sleep(0.1)
 
         romi.write_pid(kp, ki, kd)
+        time.sleep(0.1)
+
+        romi.set_base_speed(base_speed)
         time.sleep(0.1)
 
         status_msg = "Startup complete."
@@ -87,8 +128,10 @@ def main(stdscr):
         elif char == ord("a"):
             mode = "AUTO (PID)"
 
+            safe_call(romi.set_base_speed, base_speed)
+
             if safe_call(romi.set_auto_mode, True):
-                status_msg = "PID loop running. Calibrate first."
+                status_msg = "AUTO mode running."
             else:
                 status_msg = "I2C error switching to auto."
 
@@ -129,9 +172,11 @@ def main(stdscr):
                     "kp",
                     "ki",
                     "kd",
+                    "base_speed",
                     "left_cmd",
                     "right_cmd",
                     "battery_mv",
+                    "marker",
                 ])
                 is_logging = True
                 start_time = time.time()
@@ -208,6 +253,56 @@ def main(stdscr):
                 else:
                     status_msg = "I2C motor command failed. Retrying..."
 
+        # Project 8 marker handling
+        marker_id, marker_action = read_marker_from_redis()
+        now = time.time()
+
+        if marker_id in [5, 6, 7]:
+            new_marker_event = (
+                marker_id != last_marker_id or
+                now - last_marker_time > MARKER_COOLDOWN
+            )
+
+            if new_marker_event:
+                last_marker_id = marker_id
+                last_marker_time = now
+
+                if marker_id == 5:
+                    marker_msg = "ID 5 STOP sign detected."
+                    status_msg = "STOP sign: stopping for 2 seconds."
+                    stop_until = now + STOP_TIME
+
+                    safe_call(romi.set_auto_mode, False)
+                    time.sleep(0.05)
+                    safe_call(romi.motors, 0, 0)
+
+                elif marker_id == 6:
+                    base_speed = HIGH_SPEED
+                    marker_msg = "ID 6 HIGH SPEED sign detected."
+                    status_msg = f"High speed set: {base_speed}"
+
+                    safe_call(romi.set_base_speed, base_speed)
+
+                elif marker_id == 7:
+                    base_speed = LOW_SPEED
+                    marker_msg = "ID 7 LOW SPEED sign detected."
+                    status_msg = f"Low speed set: {base_speed}"
+
+                    safe_call(romi.set_base_speed, base_speed)
+
+        # Resume after stop sign if the robot was in AUTO mode
+        if stop_until > 0:
+            if time.time() < stop_until:
+                safe_call(romi.set_auto_mode, False)
+                safe_call(romi.motors, 0, 0)
+            else:
+                stop_until = 0
+                if mode == "AUTO (PID)":
+                    safe_call(romi.set_base_speed, base_speed)
+                    time.sleep(0.05)
+                    safe_call(romi.set_auto_mode, True)
+                    status_msg = "Stop complete. Resuming AUTO mode."
+
         # Protected I2C telemetry reads
         try:
             sensors = romi.read_analog()
@@ -245,9 +340,11 @@ def main(stdscr):
                 kp,
                 ki,
                 kd,
+                base_speed,
                 l_cmd,
                 r_cmd,
                 batt[0],
+                marker_id,
             ])
 
         stdscr.clear()
@@ -259,16 +356,22 @@ def main(stdscr):
         stdscr.addstr(5, 0, "Driving: Arrows (Drive), Space (Stop)")
         stdscr.addstr(6, 0, "Tune PID: [P/p] Kp +/- | [I/i] Ki +/- | [D/d] Kd +/-")
 
-        stdscr.addstr(9, 0, f"Battery : {batt[0]} mV")
-        stdscr.addstr(10, 0, f"Sensors : {sensors}")
-        stdscr.addstr(11, 0, f"Encoders: L = {encoders[0]} | R = {encoders[1]}")
-        stdscr.addstr(12, 0, f"MotorCmd: L = {l_cmd} | R = {r_cmd}")
-        stdscr.addstr(13, 0, f"PID Set : Kp={kp:.2f} | Ki={ki:.2f} | Kd={kd:.2f}")
+        stdscr.addstr(8, 0, "--- Project 8 ArUco Road Signs ---")
+        stdscr.addstr(9, 0, f"Marker : {marker_msg}")
+        stdscr.addstr(10, 0, f"Action : {marker_action}")
+        stdscr.addstr(11, 0, f"Base Speed: {base_speed}")
+        stdscr.addstr(12, 0, f"Stop Timer: {'ACTIVE' if stop_until > 0 else 'INACTIVE'}")
 
-        stdscr.addstr(15, 0, "--- Line Error Graph ---")
-        stdscr.addstr(16, 0, f"Error: {error:6.2f} [{create_graph(error)}]")
+        stdscr.addstr(14, 0, f"Battery : {batt[0]} mV")
+        stdscr.addstr(15, 0, f"Sensors : {sensors}")
+        stdscr.addstr(16, 0, f"Encoders: L = {encoders[0]} | R = {encoders[1]}")
+        stdscr.addstr(17, 0, f"MotorCmd: L = {l_cmd} | R = {r_cmd}")
+        stdscr.addstr(18, 0, f"PID Set : Kp={kp:.2f} | Ki={ki:.2f} | Kd={kd:.2f}")
 
-        stdscr.addstr(18, 0, f"Status: {status_msg}")
+        stdscr.addstr(20, 0, "--- Line Error Graph ---")
+        stdscr.addstr(21, 0, f"Error: {error:6.2f} [{create_graph(error)}]")
+
+        stdscr.addstr(23, 0, f"Status: {status_msg}")
         stdscr.refresh()
 
         time.sleep(0.05)
