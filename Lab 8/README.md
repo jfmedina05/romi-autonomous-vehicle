@@ -1,72 +1,77 @@
-# Lab 7 – Drive-by-Video Camera Driver
+# Lab 8 – ArUco Road Sign Detection & Autonomous Behavior
 
 ## Overview
 
-In this lab, I expanded the Romi autonomous vehicle system by adding a video-based driving interface. The goal was to allow the robot to be driven from a laptop using only the live camera feed transmitted from the Raspberry Pi mounted on the robot.
+In this lab, I expanded the Romi autonomous vehicle system by integrating ArUco marker detection into the robot’s video and control pipeline. This builds on Lab 7’s drive-by-video system and moves the robot closer to the final project goal: a line-following robot that can respond to visual “road signs.”
 
-This lab builds directly on the previous system components:
-
-- Lab 5 curses-based manual/autonomous driver
-- Lab 6 Raspberry Pi camera mount
-- Raspberry Pi camera capture and processing
-- Redis-based frame transmission
-- Laptop-side OpenCV video display
-
-The completed system allows an operator to drive the Romi through the curses interface while viewing live video from the robot’s onboard camera. The lab required video capture on the Pi, frame sharing through Redis, and local display on the laptop without relying on X Server forwarding.
+The system uses ArUco markers as visual commands that trigger different robot behaviors, allowing the robot to operate more autonomously without direct operator input.
 
 ---
 
 ## Objective
 
-- Integrate the mounted Raspberry Pi Camera V2.1 into the Romi driving system
-- Capture camera frames on the Raspberry Pi using `picamera2` and OpenCV
-- Transmit video frames through an onboard Redis server
-- Display video locally on a laptop using a Python/OpenCV client
-- Drive the robot manually through video feedback and the curses interface
-- Evaluate frame rate performance at multiple video resolutions
+- Add ArUco marker detection to the Romi vision system
+- Detect visual road signs using the robot-mounted camera
+- Identify marker IDs and associate them with robot behavior
+- Support autonomous response to stop, high-speed, and low-speed signs
+- Integrate vision, control, and motion into a unified system
 
 ---
 
 ## System Architecture
 
-The Lab 7 system is split across three platforms:
+The Lab 8 system integrates perception, control, and motion across three platforms:
 
 ### 1. Romi Arduino
 
-The Romi Arduino controls the robot’s physical motion. It receives driving commands from the Python driver and executes motor behavior, including manual driving and autonomous mode transitions.
+The Arduino controls the robot’s physical behavior, including motor control, line following, and execution of commands triggered by detected markers.
 
 **Responsibilities:**
 
 - Motor control
-- Line sensor interaction
-- Manual driving commands
-- Autonomous mode support
+- Line-following logic
+- Manual and autonomous mode support
+- Speed adjustments and stop behavior
 
 ---
 
 ### 2. Raspberry Pi
 
-The Raspberry Pi acts as the robot’s onboard vision and communication computer. It captures video from the mounted Pi Camera, preprocesses frames using OpenCV, and publishes them through Redis.
+The Raspberry Pi handles vision processing and communication. It captures frames from the camera, detects ArUco markers, and processes the results for use by the system.
 
 **Responsibilities:**
 
-- Camera capture using `picamera2`
-- Frame preprocessing using OpenCV
-- Redis server hosting
-- Frame transmission to the operator laptop
+- Camera capture using Pi Camera
+- ArUco marker detection using OpenCV
+- Frame processing and annotation
+- Communication with the laptop system
 
 ---
 
 ### 3. Laptop / Operator Station
 
-The laptop acts as the remote control and display station. It runs the curses interface for driving and a Python video client that reads frames from Redis and displays them locally using OpenCV.
+The laptop displays the live video feed and runs the curses interface, allowing the operator to monitor robot behavior and intervene if needed.
 
 **Responsibilities:**
 
-- Curses-based driving interface
-- Redis frame retrieval
-- OpenCV video display
-- Manual driving through camera feedback
+- Display live camera feed
+- Show detected markers and IDs
+- Provide manual control interface
+- Indicate autonomous actions
+
+---
+
+## Road Sign Behavior
+
+The robot responds to detected ArUco markers as follows:
+
+| Marker ID | Action | Behavior |
+|---|---|---|
+| ID 5 | Stop | Come to a complete stop, then resume movement |
+| ID 6 | High Speed | Switch to high-speed line following |
+| ID 7 | Low Speed | Switch to low-speed line following |
+
+These behaviors are triggered automatically when the robot detects the corresponding marker.
 
 ---
 
@@ -75,17 +80,17 @@ The laptop acts as the remote control and display station. It runs the curses in
 ```text
 Pi Camera
    ↓
-Raspberry Pi Camera Capture
+OpenCV Frame Capture
    ↓
-OpenCV Frame Processing
+ArUco Marker Detection
    ↓
-Redis Server on Pi
+Marker ID Identification
    ↓
-Laptop Python Client
+Behavior Decision Logic
    ↓
-OpenCV Video Display
+Robot Control Command
    ↓
-Operator Drives Robot with Curses Interface
+Romi Motion Execution
 ```
 
 ---
@@ -93,15 +98,20 @@ Operator Drives Robot with Curses Interface
 ## Repository Structure
 
 ```text
-Lab 7/
-├── Camera Function/
-│   ├── client.py
-│   └── server1.py
+Lab 8/
+├── ArUco Detection/
+│   └── Server & Client Programs/
+│       ├── client.py
+│       └── server1.py
 │
 ├── Movement & UI Programs/
-│   ├── Project_driver.py
-│   ├── a_star.py
-│   └── ui.py
+│   ├── Arduino Program/
+│   │   └── Lab8_E321.ino
+│   │
+│   └── Driver Program & UI/
+│       ├── Project_driver.py
+│       ├── a_star.py
+│       └── ui.py
 │
 └── README.md
 ```
@@ -112,61 +122,45 @@ Lab 7/
 
 | Folder/File | Description |
 |---|---|
-| `Camera Function/` | Camera streaming and Redis client/server programs |
-| `Movement & UI Programs/` | Manual driving, UI control, and robot movement logic |
+| `ArUco Detection/` | Camera streaming, detection, and communication programs |
+| `Server & Client Programs/` | Handles video transmission and processing |
+| `Movement & UI Programs/` | Robot control logic and user interface |
+| `Arduino Program/` | Embedded code for robot behavior |
+| `Driver Program & UI/` | Python control and UI interface |
 | `README.md` | Lab documentation and system overview |
 
 ---
 
 ## Key Features
 
-- Remote driving through live robot camera feed
-- Redis-based image transmission from Raspberry Pi to laptop
-- OpenCV display of live video frames
-- Curses interface integration for operator control
-- System distributed across Arduino, Raspberry Pi, and laptop
-- Foundation for future ArUco marker detection and autonomous road-sign behavior
-
----
-
-## Video Performance Testing
-
-The lab required testing three camera resolutions and comparing frame rate performance.
-
-| Resolution | Purpose | Expected Tradeoff |
-|---|---|---|
-| 640 × 480 | Highest image detail | Lower frame rate, more processing load |
-| 320 × 240 | Balanced quality and speed | Good compromise for driving |
-| 160 × 120 | Fastest video response | Lower detail, better responsiveness |
-
----
-
-## Recommendation
-
-A medium resolution such as `320 × 240` is often the best practical choice for this system because it balances frame rate, visibility, and responsiveness. It provides enough visual information for the operator while reducing the processing and transmission load compared to `640 × 480`.
+- Real-time ArUco marker detection using OpenCV
+- Autonomous behavior triggered by visual inputs
+- Integration with existing video streaming system
+- Manual override capability through curses interface
+- Multi-platform robotics system: Arduino, Raspberry Pi, and laptop
 
 ---
 
 ## What I Learned
 
-- How to distribute a robotics system across multiple computing platforms
-- How to stream camera data from a Raspberry Pi using Redis
-- How OpenCV can be used for real-time video display
-- How video resolution affects latency and frame rate
-- How interface design affects operator control in robotic systems
+- How to integrate computer vision into a robotics system
+- How visual data can directly control robot behavior
+- How to use ArUco markers for reliable object detection
+- How to connect perception, decision-making, and motion
+- How to design a distributed robotics architecture
 
 ---
 
 ## Future Improvements
 
-- Add compression to improve video transmission performance
-- Add frame timestamps to measure latency
-- Improve synchronization between video feedback and control commands
-- Integrate ArUco marker detection directly into the video pipeline
-- Add screenshots or demo video thumbnails to the README
+- Improve detection accuracy under varying lighting conditions
+- Add filtering to prevent repeated marker triggers
+- Introduce detection confidence thresholds
+- Add visual overlays highlighting detected markers
+- Improve transition logic between different robot states
 
 ---
 
 ## Repository Context
 
-This lab is part of a larger Romi Autonomous Vehicle project. It provides the video interface needed for the final system, where the robot follows a line and responds to visual ArUco road signs.
+This lab is part of the Romi Autonomous Vehicle project and represents the transition from remote-controlled driving to perception-driven autonomous behavior. It enables the robot to interpret visual signals and respond intelligently in real time.
