@@ -109,6 +109,21 @@ The laptop acts as the remote control, display, and monitoring station.
 
 ---
 
+## Labs and Documentation
+
+| Lab | Focus |
+|---|---|
+| [Lab 1 — Initial Setup and Basic Square Driver](./Lab%201) | Initial setup, basic movement, and square-path driving |
+| [Lab 2 — Closed-Loop Control](./Lab%202) | Encoder feedback and closed-loop motion control |
+| [Lab 3 — Control Development](./Lab%203) | Continued control, calibration, and movement development |
+| [Lab 4 — Motion Calibration](./Lab%204) | Progressive robot movement, calibration, and control refinement |
+| [Lab 5 — Curses-Based Manual and Autonomous Driver](./Lab%205) | Manual/autonomous driving interface, telemetry, PID tuning, and logging |
+| [Lab 6 — Camera Mount Design](./Lab%206) | Fusion 360 Raspberry Pi Camera V2.1 mount and hardware integration |
+| [Lab 7 — Drive-by-Video Camera Driver](./Lab%207) | Raspberry Pi camera streaming, Redis frame transfer, OpenCV display, and laptop-side driving |
+| [Lab 8 — ArUco Road Sign Detection](./Lab%208) | ArUco marker detection and autonomous robot behavior from visual signs |
+
+---
+
 ## Featured Work
 
 ### Closed-Loop Motion Control
@@ -128,7 +143,7 @@ The laptop acts as the remote control, display, and monitoring station.
 ---
 
 ### Camera Mount Design  
-#### Lab 6 – Frictionless Design
+#### [Lab 6 — Frictionless Design](./Lab%206)
 
 - Designed a custom camera mount using Fusion 360 for a Raspberry Pi Camera V2.1
 - Ensured camera alignment along the robot centerline and within physical constraints
@@ -138,14 +153,14 @@ The laptop acts as the remote control, display, and monitoring station.
 ---
 
 ### Drive-by-Video Camera Driver  
-#### Lab 7
+#### [Lab 7](./Lab%207)
 
-In Lab 7, I expanded the Romi autonomous vehicle system by adding a video-based driving interface. The goal was to allow the robot to be driven from a laptop using only the live camera feed transmitted from the Raspberry Pi mounted on the robot.
+In [Lab 7](./Lab%207), I expanded the Romi autonomous vehicle system by adding a video-based driving interface. The goal was to allow the robot to be driven from a laptop using only the live camera feed transmitted from the Raspberry Pi mounted on the robot.
 
 This lab built directly on previous system components:
 
-- Lab 5 curses-based manual/autonomous driver
-- Lab 6 Raspberry Pi camera mount
+- [Lab 5](./Lab%205) curses-based manual/autonomous driver
+- [Lab 6](./Lab%206) Raspberry Pi camera mount
 - Raspberry Pi camera capture and processing
 - Redis-based frame transmission
 - Laptop-side OpenCV video display
@@ -194,9 +209,9 @@ A medium resolution such as `320 × 240` is often the best practical choice for 
 ---
 
 ### ArUco Road Sign Detection & Autonomous Behavior  
-#### Lab 8
+#### [Lab 8](./Lab%208)
 
-In Lab 8, I expanded the Romi autonomous vehicle system by integrating ArUco marker detection into the robot’s video and control pipeline. This built on Lab 7’s drive-by-video system and moved the robot closer to the final project goal: a line-following robot that can respond to visual road signs.
+In [Lab 8](./Lab%208), I expanded the Romi autonomous vehicle system by integrating ArUco marker detection into the robot’s video and control pipeline. This built on [Lab 7](./Lab%207)’s drive-by-video system and moved the robot closer to the final project goal: a line-following robot that can respond to visual road signs.
 
 The system uses ArUco markers as visual commands that trigger different robot behaviors, allowing the robot to operate more autonomously without direct operator input.
 
@@ -282,7 +297,6 @@ Romi Autonomous Vehicle/
 │   │       └── ui.py
 │   │
 │   └── README.md
-│
 └── README.md
 ```
 
@@ -292,18 +306,22 @@ Romi Autonomous Vehicle/
 
 | Folder/File | Description |
 |---|---|
-| `Lab 1/` | Initial setup and basic square driver |
-| `Lab 2/` | Closed-loop control with encoder feedback |
-| `Lab 3/ - Lab 5/` | Progressive control, calibration, and autonomous behavior development |
-| `Lab 6/` | Camera mount design and system integration |
-| `Lab 7/Camera Function/` | Camera streaming and Redis client/server programs |
-| `Lab 7/Movement & UI Programs/` | Manual driving, UI control, and robot movement logic |
-| `Lab 8/ArUco Detection/` | Camera streaming, detection, and communication programs |
-| `Lab 8/Server & Client Programs/` | Handles video transmission and processing |
-| `Lab 8/Movement & UI Programs/` | Robot control logic and user interface |
-| `Lab 8/Arduino Program/` | Embedded code for robot behavior |
-| `Lab 8/Driver Program & UI/` | Python control and UI interface |
-| `README.md` | Overall project documentation |
+| [Lab 1](./Lab%201) | Initial setup and basic square driver |
+| [Lab 2](./Lab%202) | Closed-loop control with encoder feedback |
+| [Lab 3](./Lab%203) | Progressive control and calibration development |
+| [Lab 4](./Lab%204) | Continued robot control, tuning, and movement development |
+| [Lab 5](./Lab%205) | Curses-based manual/autonomous driver, telemetry, PID tuning, and logging |
+| [Lab 6](./Lab%206) | Camera mount design and system integration |
+| [Lab 7](./Lab%207) | Drive-by-video camera driver and Redis-based video streaming |
+| [Lab 7 / Camera Function](./Lab%207/Camera%20Function) | Camera streaming and Redis client/server programs |
+| [Lab 7 / Movement & UI Programs](./Lab%207/Movement%20%26%20UI%20Programs) | Manual driving, UI control, and robot movement logic |
+| [Lab 8](./Lab%208) | ArUco road sign detection and autonomous behavior integration |
+| [Lab 8 / ArUco Detection](./Lab%208/ArUco%20Detection) | Camera streaming, marker detection, and communication programs |
+| [Lab 8 / ArUco Detection / Server & Client Programs](./Lab%208/ArUco%20Detection/Server%20%26%20Client%20Programs) | Handles video transmission and processing |
+| [Lab 8 / Movement & UI Programs](./Lab%208/Movement%20%26%20UI%20Programs) | Robot control logic and user interface |
+| [Lab 8 / Arduino Program](./Lab%208/Movement%20%26%20UI%20Programs/Arduino%20Program) | Embedded code for robot behavior |
+| [Lab 8 / Driver Program & UI](./Lab%208/Movement%20%26%20UI%20Programs/Driver%20Program%20%26%20UI) | Python control and UI interface |
+| [README.md](./README.md) | Overall project documentation |
 
 ---
 
