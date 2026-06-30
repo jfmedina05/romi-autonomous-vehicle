@@ -1,5 +1,18 @@
 # Romi Autonomous Vehicle
 
+<p align="center">
+  <img alt="Python" src="https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white">
+  <img alt="C++" src="https://img.shields.io/badge/C++-00599C?logo=cplusplus&logoColor=white">
+  <img alt="Arduino" src="https://img.shields.io/badge/Arduino-00878F?logo=arduino&logoColor=white">
+  <img alt="Raspberry Pi" src="https://img.shields.io/badge/Raspberry%20Pi-A22846?logo=raspberrypi&logoColor=white">
+  <img alt="Raspberry Pi Camera" src="https://img.shields.io/badge/Pi%20Camera-A22846?logo=raspberrypi&logoColor=white">
+  <img alt="OpenCV" src="https://img.shields.io/badge/OpenCV-5C3EE8?logo=opencv&logoColor=white">
+  <img alt="Redis" src="https://img.shields.io/badge/Redis-FF4438?logo=redis&logoColor=white">
+  <img alt="Fusion 360" src="https://img.shields.io/badge/Fusion%20360-ED1C24?logo=autodesk&logoColor=white">
+  <img alt="Git" src="https://img.shields.io/badge/Git-F05032?logo=git&logoColor=white">
+  <img alt="Markdown" src="https://img.shields.io/badge/Markdown-000000?logo=markdown&logoColor=white">
+</p>
+
 An embedded robotics system built on the Pololu Romi 32U4 platform, focused on autonomous navigation, closed-loop control, hardware–software integration, and vision-based robot behavior. This project documents the development of a mobile robot capable of reliable motion, system-level coordination, video-based driving, and autonomous responses to visual road signs.
 
 ---
